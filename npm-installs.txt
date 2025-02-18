@@ -1,0 +1,8 @@
+npm install
+npm install tailwindcss
+npm install @supabase/supabase-js
+npm install bcryptjs
+npm install react-icons
+npm install framer-motion
+
+
