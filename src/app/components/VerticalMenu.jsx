@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import { FiMenu, FiX, FiTool, FiPenTool, FiBook, FiPhone, FiUser } from "react-icons/fi";
+import { FiMenu, FiX, FiTool, FiPenTool, FiBook, FiPhone, FiUser, FiCalendar } from "react-icons/fi";
 
 export default function VerticalMenu() {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +13,7 @@ export default function VerticalMenu() {
         { name: "Perfil", icon: <FiUser />, href: "/login" },
         { name: "Blog", icon: <FiBook />, href: "/blog" },
         { name: "Contacto", icon: <FiPhone />, href: "/contacto" },
+        { name: "Calendario", icon: <FiCalendar className="text-xl" />, href: "/calendario" },
     ];
 
     return (
