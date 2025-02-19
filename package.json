@@ -15,6 +15,7 @@
     "@fullcalendar/timegrid": "^6.1.15",
     "@supabase/supabase-js": "^2.48.1",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.4.4",
     "next": "15.1.7",
     "react": "^19.0.0",

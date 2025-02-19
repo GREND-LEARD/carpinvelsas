@@ -4,5 +4,4 @@ npm install @supabase/supabase-js
 npm install bcryptjs
 npm install react-icons
 npm install framer-motion
-
-
+npm install @fullcalendar/react @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction framer-motion date-fns
