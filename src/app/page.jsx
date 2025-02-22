@@ -17,6 +17,23 @@ export default function Home() {
   const position = useTransform(scrollYProgress, (pos) => {
     return `${pos * 50}%`;
   });
+  const projects = [
+    {
+      title: "Comedor Rústico",
+      description: "Mesa y sillas talladas en madera de pino macizo",
+      image: "/proyectos/comedor.jpg"
+    },
+    {
+      title: "Armario Vintage",
+      description: "Restauración de armario antiguo con detalles únicos",
+      image: "/proyectos/armario.jpg"
+    },
+    {
+      title: "Escritorio Moderno",
+      description: "Diseño contemporáneo con maderas nobles",
+      image: "/proyectos/escritorio.jpg"
+    }
+  ];
   const features = [
     {
       icon: <FiTool className="w-8 h-8" />,
@@ -226,56 +243,44 @@ export default function Home() {
       </div>
 
       {/* Proyectos Destacados */}
-      <div className="py-32 bg-amber-900">
-        <div className="container mx-auto px-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {projects.map((project, index) => (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            key={index}
+            initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            transition={{ delay: index * 0.2 }}
+            whileHover={{ y: -10 }}
+            className="relative group overflow-hidden rounded-2xl h-[400px]" 
           >
-            <h2 className="text-5xl font-serif font-bold text-amber-50 mb-6">
-              Proyectos Destacados
-            </h2>
-            <p className="text-xl text-amber-100">
-              Explora nuestras creaciones más recientes
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((_, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.2 }}
-                whileHover={{ y: -10 }}
-                className="relative group overflow-hidden rounded-2xl"
+            <div className="aspect-[3/4] relative h-full"> 
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-900 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <img 
+                src={project.image}
+                alt={project.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-amber-900/80">
+              <h3 className="text-2xl font-bold text-amber-50 mb-2">
+                {project.title}
+              </h3>
+              <p className="text-amber-100 mb-4">
+                {project.description}
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2 bg-amber-600 text-amber-50 rounded-full hover:bg-amber-500 transition-all"
               >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-t from-amber-900 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <img 
-                    src={`/proyecto${index + 1}.jpg`} 
-                    alt={`Proyecto ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-2xl font-bold text-amber-50 mb-2">
-                    Proyecto {index + 1}
-                  </h3>
-                  <p className="text-amber-100">
-                    Descripción breve del proyecto y sus características únicas.
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+                Ver Detalles
+              </motion.button>
+            </div>
+          </motion.div>
+        ))}
       </div>
-
-      {/* Contador de Estadísticas */}
+      
       <div className="py-20 bg-amber-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -304,7 +309,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      {/* Footer con Efecto de Gradiente Animado */}
+      
       <footer className="bg-amber-900 py-20">
         <div className="container mx-auto px-4 text-center">
           <motion.h3
