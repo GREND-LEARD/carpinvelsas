@@ -3,7 +3,7 @@ import { supabase } from '@/app/lib/supabaseClient';
 
 export async function POST(req) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, rol } = await req.json();
 
     // Validar datos de entrada
     if (!name || !email || !password) {
@@ -11,7 +11,7 @@ export async function POST(req) {
     }
 
     // Verificar si el usuario ya existe
-    const { data: existingUser, error: userError } = await supabase
+    const { data: existingUser } = await supabase
       .from('usuarios')
       .select('id')
       .eq('email', email)
@@ -24,6 +24,10 @@ export async function POST(req) {
     // Hashear la contraseña
     const hashedPassword = await hash(password, 12);
 
+    // Validar el rol
+    const validRoles = ['admin', 'client', 'user'];
+    const userRole = rol && validRoles.includes(rol) ? rol : 'client';
+
     // Insertar usuario en la tabla 'usuarios'
     const { data, error } = await supabase
       .from('usuarios')
@@ -32,7 +36,7 @@ export async function POST(req) {
           nombre: name,
           email,
           contraseña: hashedPassword,
-          rol: 'usuario', // Proporciona un valor para el campo 'rol'
+          rol: userRole,
           creado_en: new Date().toISOString(),
           actualizado_en: new Date().toISOString(),
         },
@@ -44,11 +48,15 @@ export async function POST(req) {
       throw new Error('No se pudo registrar el usuario');
     }
 
-    // Confirmar el registro exitoso
-    return new Response(JSON.stringify({ message: 'Usuario registrado correctamente', user: data[0] }), { status: 201 });
+    return new Response(JSON.stringify({ 
+      message: 'Usuario registrado correctamente', 
+      user: data[0] 
+    }), { status: 201 });
 
   } catch (error) {
     console.error('Error en el registro:', error);
-    return new Response(JSON.stringify({ message: error.message || 'Error en el servidor' }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      message: error.message || 'Error en el servidor' 
+    }), { status: 500 });
   }
 }

@@ -3,34 +3,85 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FiLock, FiMail, FiUser } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext'; // Añadir esta importación
 
 const AuthForm = ({ isLogin }) => {
     const router = useRouter();
-    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const { login } = useAuth(); // Añadir este hook
+    
+    const [formData, setFormData] = useState({ 
+        name: '', 
+        email: '', 
+        password: '',
+        rol: 'client',
+        adminCode: '' // Nuevo campo para el código de admin
+    });
+    
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const validateForm = () => {
+        if (!formData.email || !formData.password || (!isLogin && !formData.name)) {
+            setError('Por favor, complete todos los campos');
+            return false;
+        }
+        if (!isLogin && formData.rol === 'admin' && formData.adminCode !== '9966') {
+            setError('Código de administrador incorrecto');
+            return false;
+        }
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
+    
+        if (!validateForm()) {
+            setIsLoading(false);
+            return;
+        }
+    
         try {
-            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
+            const dataToSend = isLogin ? {
+                email: formData.email,
+                password: formData.password
+            } : {
+                ...formData,
+                adminCode: undefined
+            };
+    
+            console.log('Enviando datos:', dataToSend); // Debug
+    
+            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                headers: { 
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend),
             });
-
+    
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Ocurrió un error');
-
-            localStorage.setItem('user', JSON.stringify(data));
-            router.push('/dashboard');
+            console.log('Respuesta del servidor:', data); // Debug
+    
+            if (!response.ok) {
+                throw new Error(data.message || 'Error en el servidor');
+            }
+    
+            if (isLogin) {
+                // Login exitoso
+                await login(data.user, data.token);
+            } else {
+                // Registro exitoso
+                setError('¡Registro exitoso! Redirigiendo...');
+                setTimeout(() => {
+                    router.push('/login');
+                }, 2000);
+            }
         } catch (err) {
-            setError(err.message);
-            setFormData((prev) => ({ ...prev, password: '' }));
+            console.error('Error detallado:', err);
+            setError(err.message || 'Error en la autenticación');
         } finally {
             setIsLoading(false);
         }
@@ -44,11 +95,60 @@ const AuthForm = ({ isLogin }) => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {!isLogin && (
-                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
-                        <FiUser className="absolute top-3 left-3 text-amber-600" size={20} />
-                        <input type="text" placeholder="Tu nombre" className="w-full pl-10 pr-4 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none"
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-                    </motion.div>
+                    <>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
+                            <FiUser className="absolute top-3 left-3 text-amber-600" size={20} />
+                            <input type="text" placeholder="Tu nombre" className="w-full pl-10 pr-4 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none"
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                        </motion.div>
+
+                        {/* Selector de rol */}
+                        <motion.div 
+                            initial={{ x: -20, opacity: 0 }} 
+                            animate={{ x: 0, opacity: 1 }} 
+                            transition={{ delay: 0.15 }} 
+                            className="relative"
+                        >
+                            <label className="block text-amber-700 text-sm mb-2 font-medium">Tipo de cuenta</label>
+                            <select
+                                className="w-full pl-4 pr-8 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none appearance-none text-amber-900"
+                                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                                value={formData.rol}
+                            >
+                                <option value="client">Cliente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            <div className="absolute right-3 top-[2.7rem] pointer-events-none text-amber-600">
+                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
+                            </div>
+                        </motion.div>
+
+                        {/* Campo de código de administrador */}
+                        {formData.rol === 'admin' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="relative"
+                            >
+                                <label className="block text-amber-700 text-sm mb-2 font-medium">
+                                    Código de Administrador
+                                </label>
+                                <div className="relative">
+                                    <FiLock className="absolute top-3 left-3 text-amber-600" size={20} />
+                                    <input
+                                        type="password"
+                                        placeholder="Ingresa el código secreto"
+                                        className="w-full pl-10 pr-4 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none"
+                                        onChange={(e) => setFormData({ ...formData, adminCode: e.target.value })}
+                                        required={formData.rol === 'admin'}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </>
                 )}
 
                 <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
