@@ -1,10 +1,11 @@
 import { compare } from 'bcryptjs';
 import { supabase } from '@/app/lib/supabaseClient';
+import { createToken } from '@/app/utils/jwt';
 
-export async function POST(req) {
+export async function POST(request) {
     try {
-        const { email, password } = await req.json();
-
+        const { email, password } = await request.json();
+        
         // Validar datos de entrada
         if (!email || !password) {
             return new Response(
@@ -39,16 +40,33 @@ export async function POST(req) {
         // Eliminar la contraseña del objeto usuario antes de enviarlo
         delete user.contraseña;
 
-        return new Response(JSON.stringify({
-            message: 'Login exitoso',
-            user: user
-        }), { status: 200 });
+        // Generar un token JWT real
+        const token = await createToken({
+            id: user.id,
+            email: user.email,
+            rol: user.rol
+        });
 
+        // Modificar la respuesta para incluir el rol
+        return new Response(JSON.stringify({
+            user: {
+                id: user.id,
+                nombre: user.nombre,
+                email: user.email,
+                rol: user.rol // Asegúrate de que este campo exista en tu base de datos
+            },
+            token: token
+        }), { 
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     } catch (error) {
         console.error('Error en login:', error);
         return new Response(
-            JSON.stringify({ message: 'Error del servidor' }), 
-            { status: 500 }
+            JSON.stringify({ message: error.message || 'Error en la autenticación' }), 
+            { status: 400 }
         );
     }
 }

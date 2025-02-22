@@ -17,6 +17,8 @@
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.4.4",
+    "jose": "^5.10.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

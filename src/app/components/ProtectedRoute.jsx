@@ -1,24 +1,45 @@
-import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'next/navigation';
+'use client';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../context/AuthContext';
 
-export const ProtectedRoute = ({ children, allowedRoles }) => {
-    const { user, hasRole } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+    const { user, isLoading, isAuthenticated } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        if (!user) {
-            router.push('/login');
-            return;
-        }
+        // Verificar autenticación solo cuando isLoading sea false
+        if (!isLoading) {
+            const token = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
 
-        // Redirección basada en roles
-        if (hasRole('admin')) {
-            router.push('/dashboard');
-        } else if (hasRole('client')) {
-            router.push('/client-portal');
+            if (!token || !savedUser) {
+                router.push('/login');
+                return;
+            }
+
+            // Si hay roles permitidos, verificar el rol del usuario
+            if (allowedRoles.length > 0 && user) {
+                if (!allowedRoles.includes(user.rol)) {
+                    router.push(user.rol === 'admin' ? '/dashboard' : '/client-portal');
+                }
+            }
         }
-    }, [user]);
+    }, [isLoading, user, router, allowedRoles]);
+
+    // Mostrar loading mientras se verifica la autenticación
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-amber-50 flex items-center justify-center">
+                <div className="h-16 w-16 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Si no hay usuario autenticado, no renderizar nada
+    if (!isAuthenticated) return null;
 
     return children;
 };
+
+export default ProtectedRoute;

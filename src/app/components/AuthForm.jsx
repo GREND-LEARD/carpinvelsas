@@ -3,9 +3,12 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FiLock, FiMail, FiUser } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext'; // Añadir esta importación
 
 const AuthForm = ({ isLogin }) => {
     const router = useRouter();
+    const { login } = useAuth(); // Añadir este hook
+    
     const [formData, setFormData] = useState({ 
         name: '', 
         email: '', 
@@ -33,14 +36,13 @@ const AuthForm = ({ isLogin }) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
+    
         if (!validateForm()) {
             setIsLoading(false);
             return;
         }
-
+    
         try {
-            // Preparar datos para enviar (sin el código de admin)
             const dataToSend = isLogin ? {
                 email: formData.email,
                 password: formData.password
@@ -48,36 +50,38 @@ const AuthForm = ({ isLogin }) => {
                 ...formData,
                 adminCode: undefined
             };
-
+    
+            console.log('Enviando datos:', dataToSend); // Debug
+    
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(dataToSend),
             });
-
+    
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Ocurrió un error');
-
+            console.log('Respuesta del servidor:', data); // Debug
+    
+            if (!response.ok) {
+                throw new Error(data.message || 'Error en el servidor');
+            }
+    
             if (isLogin) {
-                // Guardar datos del usuario y token
-                localStorage.setItem('user', JSON.stringify(data.user));
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                }
-
-                // Asegurarse de que la redirección ocurra después de guardar los datos
-                setTimeout(() => {
-                    const redirectPath = data.user.rol === 'admin' ? '/dashboard' : '/client-portal';
-                    router.push(redirectPath);
-                }, 100);
+                // Login exitoso
+                await login(data.user, data.token);
             } else {
-                // Si es registro exitoso, redirigir al login
-                router.push('/login');
+                // Registro exitoso
+                setError('¡Registro exitoso! Redirigiendo...');
+                setTimeout(() => {
+                    router.push('/login');
+                }, 2000);
             }
         } catch (err) {
-            setError(err.message);
-            setFormData((prev) => ({ ...prev, password: '' }));
+            console.error('Error detallado:', err);
+            setError(err.message || 'Error en la autenticación');
         } finally {
             setIsLoading(false);
         }

@@ -1,8 +1,7 @@
 'use client';
+import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuth } from '@/app/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiBox, FiSettings, FiUsers, FiDollarSign, FiCalendar, FiLogOut, FiTool, FiStar, FiFileText, FiGrid } from 'react-icons/fi';
 
 const stats = [
@@ -24,20 +23,13 @@ const notifications = [
     { id: 3, text: "Recordatorio: Entrega proyecto #123", time: "1d ago", unread: true },
 ];
 
-export default function DashboardPage() {
+function Dashboard() {
     const { user, logout } = useAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!user) router.push('/login');
-    }, [user]);
 
     const getInitials = () => {
         if (!user?.nombre) return '?';
         return user.nombre.split(' ').map(n => n[0]).join('').toUpperCase();
     };
-
-    if (!user) return null;
 
     return (
         <div className="min-h-screen bg-[url('/textura-madera.jpg')] bg-cover bg-fixed">
@@ -218,5 +210,13 @@ export default function DashboardPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <ProtectedRoute allowedRoles={['admin']}>
+            <Dashboard />
+        </ProtectedRoute>
     );
 }
