@@ -6,7 +6,13 @@ import { FiLock, FiMail, FiUser } from 'react-icons/fi';
 
 const AuthForm = ({ isLogin }) => {
     const router = useRouter();
-    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [formData, setFormData] = useState({ 
+        name: '', 
+        email: '', 
+        password: '',
+        rol: 'client' // Agregado rol por defecto
+    });
+    
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +33,15 @@ const AuthForm = ({ isLogin }) => {
             if (!response.ok) throw new Error(data.message || 'Ocurrió un error');
 
             localStorage.setItem('user', JSON.stringify(data));
-            router.push('/dashboard');
+            
+            // Redirección basada en el rol
+            if (isLogin) {
+                // Si es login, usar el rol del usuario que viene en data
+                router.push(data.user.rol === 'admin' ? '/dashboard' : '/client-portal');
+            } else {
+                // Si es registro, usar el rol seleccionado en el formulario
+                router.push(formData.rol === 'admin' ? '/dashboard' : '/client-portal');
+            }
         } catch (err) {
             setError(err.message);
             setFormData((prev) => ({ ...prev, password: '' }));
@@ -44,11 +58,36 @@ const AuthForm = ({ isLogin }) => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {!isLogin && (
-                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
-                        <FiUser className="absolute top-3 left-3 text-amber-600" size={20} />
-                        <input type="text" placeholder="Tu nombre" className="w-full pl-10 pr-4 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none"
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
-                    </motion.div>
+                    <>
+                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
+                            <FiUser className="absolute top-3 left-3 text-amber-600" size={20} />
+                            <input type="text" placeholder="Tu nombre" className="w-full pl-10 pr-4 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none"
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                        </motion.div>
+
+                        {/* Selector de rol */}
+                        <motion.div 
+                            initial={{ x: -20, opacity: 0 }} 
+                            animate={{ x: 0, opacity: 1 }} 
+                            transition={{ delay: 0.15 }} 
+                            className="relative"
+                        >
+                            <label className="block text-amber-700 text-sm mb-2 font-medium">Tipo de cuenta</label>
+                            <select
+                                className="w-full pl-4 pr-8 py-3 bg-amber-100/50 rounded-lg focus:ring-2 ring-amber-500 border-none appearance-none text-amber-900"
+                                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                                value={formData.rol}
+                            >
+                                <option value="client">Cliente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            <div className="absolute right-3 top-[2.7rem] pointer-events-none text-amber-600">
+                                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
+                            </div>
+                        </motion.div>
+                    </>
                 )}
 
                 <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative">
