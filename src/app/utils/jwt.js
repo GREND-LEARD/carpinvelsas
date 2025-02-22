@@ -1,12 +1,24 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || '/oeYJo2rGv0XHWt7YpqTBq0ugRQPhO99Y3QbcPUEgUqD81WWXn0N+37MELHLYEticW/Q/JYsh2w3eoLIppZCiw==');
+const getSecretKey = () => {
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    
+    if (!secret) {
+        console.warn('Using fallback JWT secret');
+        return new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret_key');
+    }
+    
+    return new TextEncoder().encode(secret);
+};
+
+const secretKey = getSecretKey();
 
 export async function verifyToken(token) {
     try {
         const { payload } = await jwtVerify(token, secretKey);
         return payload;
     } catch (error) {
+        console.error('Token verification error:', error);
         return null;
     }
 }
