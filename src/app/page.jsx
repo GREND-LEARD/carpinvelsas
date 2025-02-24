@@ -236,10 +236,16 @@ export default function Home() {
           >
             ¿Listo para crear algo extraordinario?
           </motion.h3>
+          <div className="flex flex-col gap-4 items-center">
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
+            <Link href="/contact" className="inline-block px-12 py-4 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-50 rounded-full font-medium hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-amber-500/50">
+                    Contáctanos
+                </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link 
               href="/register" 
               className="inline-block px-12 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-amber-50 rounded-full font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-amber-500/50"
@@ -247,6 +253,7 @@ export default function Home() {
               Comienza tu Proyecto
             </Link>
           </motion.div>
+          </div>
         </div>
       </footer>
     </div>
