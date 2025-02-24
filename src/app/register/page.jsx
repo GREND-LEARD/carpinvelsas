@@ -35,16 +35,16 @@ export default function RegisterPage() {
     ];
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F5EFE6] p-4 overflow-x-hidden">
-            {/* Fondo con efecto suave */}
+        <div className="min-h-screen min-w-full flex items-center justify-center bg-[#F5EFE6] p-4 overflow-x-hidden relative">
+            {/* Fondo con efecto suave - ajustado para cubrir toda la página */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-gradient-to-br from-[#4F3422]/30 via-[#4F3422]/20 to-[#4F3422]/10 backdrop-blur-sm"
+                className="fixed inset-0 bg-gradient-to-br from-[#4F3422]/30 via-[#4F3422]/20 to-[#4F3422]/10 backdrop-blur-sm"
             />
             
-            {/* Elementos decorativos flotantes */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Elementos decorativos flotantes - ajustados a fixed */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 {[
                     { left: "20%", top: "20%" },
                     { left: "40%", top: "35%" },
@@ -72,12 +72,12 @@ export default function RegisterPage() {
                 ))}
             </div>
 
-            {/* Logo con animación - ajustado para móvil */}
+            {/* Logo - ajustado a fixed */}
             <motion.div 
                 initial={{ opacity: 0, scale: 0.8, rotate: -12 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ delay: 0.2, type: "spring" }}
-                className="absolute top-4 right-4 md:top-10 md:right-10 text-[#4F3422]"
+                className="fixed top-4 right-4 md:top-10 md:right-10 text-[#4F3422] z-20"
             >
                 <motion.img 
                     src="/logo.png" 
@@ -87,8 +87,8 @@ export default function RegisterPage() {
                     transition={{ type: "spring", stiffness: 200 }}
                 />
             </motion.div>
-
-            <div className="container mx-auto flex flex-col lg:flex-row-reverse items-center justify-between gap-6 lg:gap-12 z-10 px-4 md:px-8">
+            {/* Contenido principal */}
+            <div className="container mx-auto flex flex-col-reverse lg:flex-row-reverse items-center justify-between gap-6 lg:gap-12 z-10 px-4 md:px-8 py-20 md:py-12 relative">
                 <motion.div 
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -162,12 +162,12 @@ export default function RegisterPage() {
                 </motion.div>
             </div>
 
-            {/* Footer - ajustado para móvil */}
+            {/* Footer - ajustado a fixed */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.2 }}
-                className="absolute bottom-2 md:bottom-4 text-[#4F3422]/80 text-xs md:text-sm text-center w-full px-4"
+                className="fixed bottom-2 md:bottom-4 text-[#4F3422]/80 text-xs md:text-sm text-center w-full px-4 z-20"
             >
                 <p className="flex items-center justify-center gap-2">
                     <FiClock className="text-[#4F3422]" />
