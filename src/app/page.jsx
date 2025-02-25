@@ -8,6 +8,7 @@ import { useRef } from 'react';
 export default function Home() {
   const router = useRouter();  // Añadir esto
   const targetRef = useRef(null);
+  const MotionLink = motion(Link);
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ["start start", "end start"]
@@ -119,17 +120,14 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
             >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <MotionLink 
+                href="/register"
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }} 
+                className="px-8 py-4 bg-amber-600 text-amber-50 rounded-full font-medium hover:bg-amber-500 transition-all shadow-lg hover:shadow-amber-500/50"
               >
-                <Link 
-                  href="/register" 
-                  className="px-8 py-4 bg-amber-600 text-amber-50 rounded-full font-medium hover:bg-amber-500 transition-all shadow-lg hover:shadow-amber-500/50"
-                >
-                  Únete al Taller
-                </Link>
-              </motion.div>
+                Únete al Taller
+              </MotionLink>
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -321,22 +319,22 @@ export default function Home() {
             ¿Listo para crear algo extraordinario?
           </motion.h3>
           <div className="flex flex-col gap-4 items-center">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Link href="/contact" className="inline-block px-12 py-4 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-50 rounded-full font-medium hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-amber-500/50">
-                    Contáctanos
-                </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link 
-              href="/register" 
+            <MotionLink 
+              href="/contact"
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
+              className="inline-block px-12 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-amber-50 rounded-full font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-amber-500/50"
+            >
+              Contáctanos
+            </MotionLink>
+            <MotionLink 
+              href="/register"
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
               className="inline-block px-12 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-amber-50 rounded-full font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-amber-500/50"
             >
               Comienza tu Proyecto
-            </Link>
-          </motion.div>
+            </MotionLink>
           </div>
         </div>
       </footer>
