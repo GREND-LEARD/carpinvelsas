@@ -497,6 +497,7 @@ export default function Home() {
                       whileTap={{ scale: 0.95 }}
                       className="min-h-[40px] min-w-[120px] px-6 py-2 bg-amber-600 text-amber-50 rounded-full hover:bg-amber-500 transition-all flex items-center gap-2 justify-center"
                       aria-label={`Ver detalles de ${project.title}`}
+                      onClick={() => router.push('/productos')}
                     >
                       Ver Detalles <FiArrowRight aria-hidden="true" />
                     </motion.button>
@@ -505,6 +506,23 @@ export default function Home() {
               ))}
             </div>
           </div>
+          
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex justify-center mt-12"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(217, 119, 6, 0.5)" }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/productos')}
+              className="min-h-[54px] min-w-[220px] px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-amber-50 rounded-full font-medium hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-amber-500/50 flex items-center gap-2 justify-center"
+              aria-label="Ver catálogo completo"
+            >
+              Ver Catálogo Completo <FiArrowRight className="ml-2" aria-hidden="true" />
+            </motion.button>
+          </motion.div>
         </section>
         
         {/* Estadísticas Mejoradas */}

@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
             setAuthError(null);
             
             // Redireccionar según rol
-            const redirectPath = userData.rol === 'admin' ? '/dashboard' : '/client-portal';
+            const redirectPath = userData.rol === 'admin' ? '/dashboard' : '/productos';
             console.log(`Redirigiendo a: ${redirectPath}`);
             router.push(redirectPath);
             
