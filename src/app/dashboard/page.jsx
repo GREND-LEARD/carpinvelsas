@@ -1,5 +1,5 @@
 'use client';
-import ProtectedRoute from '../components/ProtectedRoute';
+import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useAuth } from '@/app/context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiBox, FiSettings, FiUsers, FiDollarSign, FiCalendar, FiLogOut, FiTool, FiStar, FiFileText, FiGrid } from 'react-icons/fi';

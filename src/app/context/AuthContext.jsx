@@ -1,7 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { verifyToken } from '../utils/jwt';
 
 const AuthContext = createContext(null);
 
@@ -9,33 +8,50 @@ export const AuthProvider = ({ children }) => {
     const router = useRouter();
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [authError, setAuthError] = useState(null);
 
     useEffect(() => {
         const initAuth = async () => {
             try {
+                setIsLoading(true);
                 // Verificar si hay datos en localStorage
                 const savedUser = localStorage.getItem('user');
                 const token = localStorage.getItem('token');
 
-                if (savedUser && token) {
-                    // Validar el token con el servidor
-                    const response = await fetch('/api/auth/validate', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
+                console.log('Inicializando autenticación:', { 
+                    hasUserData: !!savedUser, 
+                    hasToken: !!token 
+                });
 
-                    if (response.ok) {
-                        setUser(JSON.parse(savedUser));
-                    } else {
-                        // Si el token no es válido, limpiar todo
-                        localStorage.removeItem('user');
-                        localStorage.removeItem('token');
-                        router.push('/login');
+                if (savedUser && token) {
+                    try {
+                        // Validar el token con el servidor
+                        const response = await fetch('/api/auth/validate', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.valid) {
+                            const userData = JSON.parse(savedUser);
+                            console.log('Token válido, usuario autenticado:', userData.email);
+                            setUser(userData);
+                        } else {
+                            console.log('Token inválido, limpiando datos de sesión');
+                            await logout(false); // Logout sin redirección
+                        }
+                    } catch (error) {
+                        console.error('Error validando token:', error);
+                        await logout(false); // Logout sin redirección
                     }
+                } else {
+                    console.log('No hay datos de sesión');
                 }
             } catch (error) {
-                console.error('Auth initialization failed:', error);
+                console.error('Error inicializando autenticación:', error);
+                setAuthError('Error al inicializar la autenticación');
             } finally {
                 setIsLoading(false);
             }
@@ -45,17 +61,51 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (userData, token) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-        router.push(userData.rol === 'admin' ? '/dashboard' : '/client-portal');
+        try {
+            if (!userData || !token) {
+                throw new Error('Datos de usuario o token faltantes');
+            }
+
+            console.log('Iniciando sesión para:', userData.email);
+            
+            // Guardar en localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(userData));
+            
+            // Actualizar estado
+            setUser(userData);
+            setAuthError(null);
+            
+            // Redireccionar según rol
+            const redirectPath = userData.rol === 'admin' ? '/dashboard' : '/client-portal';
+            console.log(`Redirigiendo a: ${redirectPath}`);
+            router.push(redirectPath);
+            
+            return true;
+        } catch (error) {
+            console.error('Error en login:', error);
+            setAuthError(error.message);
+            return false;
+        }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        router.push('/login');
+    const logout = async (shouldRedirect = true) => {
+        try {
+            // Limpiar localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Actualizar estado
+            setUser(null);
+            
+            // Redireccionar si es necesario
+            if (shouldRedirect) {
+                console.log('Sesión cerrada, redirigiendo a login');
+                router.push('/login');
+            }
+        } catch (error) {
+            console.error('Error en logout:', error);
+        }
     };
 
     const hasRole = (role) => {
@@ -66,6 +116,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{ 
             user, 
             isLoading,
+            authError,
             login, 
             logout,
             hasRole,

@@ -1,5 +1,5 @@
 "use client";
-import AuthForm from '@/app/components/AuthForm';
+import AuthForm from '@/components/forms/AuthForm';
 import { motion } from 'framer-motion';
 import { FiShield, FiStar, FiHeart, FiTrendingUp, FiCheck, FiAward, FiClock } from 'react-icons/fi';
 

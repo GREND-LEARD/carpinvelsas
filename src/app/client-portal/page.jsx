@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiPackage, FiClock, FiDollarSign, FiMessageSquare, FiCalendar, FiPlus, FiTool, FiFileText } from 'react-icons/fi';
-import ProtectedRoute from '../components/ProtectedRoute';
+import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import Link from 'next/link';
 
 function ClientPortal() {

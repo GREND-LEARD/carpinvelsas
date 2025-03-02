@@ -3,60 +3,84 @@ import { supabase } from '@/app/lib/supabaseClient';
 
 export async function POST(req) {
   try {
-    const { name, email, password, rol } = await req.json();
+    const { name, email, password, rol, apellido = "No especificado" } = await req.json();
 
     // Validar datos de entrada
     if (!name || !email || !password) {
-      return new Response(JSON.stringify({ message: 'Todos los campos son obligatorios' }), { status: 400 });
+      return Response.json(
+        { message: 'Todos los campos son obligatorios' }, 
+        { status: 400 }
+      );
     }
 
     // Verificar si el usuario ya existe
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: searchError } = await supabase
       .from('usuarios')
       .select('id')
       .eq('email', email)
       .single();
 
+    if (searchError && searchError.code !== 'PGRST116') {
+      console.error('Error al buscar usuario:', searchError);
+      return Response.json(
+        { message: 'Error al verificar usuario existente' }, 
+        { status: 500 }
+      );
+    }
+
     if (existingUser) {
-      return new Response(JSON.stringify({ message: 'El usuario ya existe' }), { status: 409 });
+      return Response.json(
+        { message: 'El usuario ya existe' }, 
+        { status: 409 }
+      );
     }
 
     // Hashear la contraseña
     const hashedPassword = await hash(password, 12);
 
     // Validar el rol
-    const validRoles = ['admin', 'client', 'user'];
-    const userRole = rol && validRoles.includes(rol) ? rol : 'client';
+    const validRoles = ['admin', 'usuario', 'client'];
+    const userRole = rol && validRoles.includes(rol) ? rol : 'usuario';
+
+    // Estructura actualizada del usuario según el esquema real
+    const newUser = {
+      nombre: name,
+      apellido: apellido,
+      email: email,
+      password_hash: hashedPassword,
+      rol: userRole,
+      activo: true
+    };
 
     // Insertar usuario en la tabla 'usuarios'
     const { data, error } = await supabase
       .from('usuarios')
-      .insert([
-        {
-          nombre: name,
-          email,
-          contraseña: hashedPassword,
-          rol: userRole,
-          creado_en: new Date().toISOString(),
-          actualizado_en: new Date().toISOString(),
-        },
-      ])
+      .insert([newUser])
       .select();
 
     if (error) {
       console.error('Error al insertar usuario:', error);
-      throw new Error('No se pudo registrar el usuario');
+      return Response.json(
+        { message: error.message || 'No se pudo registrar el usuario' }, 
+        { status: 500 }
+      );
     }
 
-    return new Response(JSON.stringify({ 
+    return Response.json({ 
       message: 'Usuario registrado correctamente', 
-      user: data[0] 
-    }), { status: 201 });
+      user: {
+        id: data[0].id,
+        nombre: data[0].nombre,
+        apellido: data[0].apellido,
+        email: data[0].email,
+        rol: data[0].rol
+      }
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Error en el registro:', error);
-    return new Response(JSON.stringify({ 
+    return Response.json({ 
       message: error.message || 'Error en el servidor' 
-    }), { status: 500 });
+    }, { status: 500 });
   }
 }

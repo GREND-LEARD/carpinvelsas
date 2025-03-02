@@ -1,35 +1,53 @@
 'use client';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { FiLock, FiMail, FiUser, FiPhone } from 'react-icons/fi';
-import { useAuth } from '../context/AuthContext'; // Añadir esta importación
+import { useState, useEffect } from 'react';
+import { FiLock, FiMail, FiUser, FiPhone, FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
 
 const AuthForm = ({ isLogin }) => {
     const router = useRouter();
-    const { login } = useAuth(); // Añadir este hook
+    const { login } = useAuth();
     
     const [formData, setFormData] = useState({ 
         name: '', 
         email: '', 
         password: '',
         rol: 'client',
-        adminCode: '' // Nuevo campo para el código de admin
+        adminCode: ''
     });
     
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [debugInfo, setDebugInfo] = useState(null);
 
     const validateForm = () => {
-        if (!formData.email || !formData.password || (!isLogin && !formData.name)) {
-            setError('Por favor, complete todos los campos');
+        // Resetear mensajes
+        setError('');
+        setSuccess('');
+        
+        if (!formData.email) {
+            setError('Por favor, ingresa tu correo electrónico');
             return false;
         }
+        
+        if (!formData.password) {
+            setError('Por favor, ingresa tu contraseña');
+            return false;
+        }
+        
+        if (!isLogin && !formData.name) {
+            setError('Por favor, ingresa tu nombre');
+            return false;
+        }
+        
         if (!isLogin && formData.rol === 'admin' && formData.adminCode !== '9966') {
             setError('Código de administrador incorrecto');
             return false;
         }
+        
         return true;
     };
 
@@ -37,6 +55,11 @@ const AuthForm = ({ isLogin }) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+        setSuccess('');
+        setDebugInfo(null);
+        
+        console.log(`Iniciando ${isLogin ? 'login' : 'registro'} con datos:`, 
+            { email: formData.email, rol: formData.rol });
     
         if (!validateForm()) {
             setIsLoading(false);
@@ -48,12 +71,14 @@ const AuthForm = ({ isLogin }) => {
                 email: formData.email,
                 password: formData.password
             } : {
-                ...formData,
-                adminCode: undefined
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+                rol: formData.rol
             };
     
-            console.log('Enviando datos:', dataToSend); // Debug
-    
+            console.log('Enviando solicitud al endpoint:', isLogin ? 'login' : 'registro');
+            
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -64,7 +89,14 @@ const AuthForm = ({ isLogin }) => {
             });
     
             const data = await response.json();
-            console.log('Respuesta del servidor:', data); // Debug
+            console.log('Respuesta recibida:', { status: response.status, data });
+            
+            // Guardar información de depuración
+            setDebugInfo({
+                status: response.status,
+                data: data,
+                ok: response.ok
+            });
     
             if (!response.ok) {
                 throw new Error(data.message || 'Error en el servidor');
@@ -72,17 +104,28 @@ const AuthForm = ({ isLogin }) => {
     
             if (isLogin) {
                 // Login exitoso
-                await login(data.user, data.token);
+                setSuccess('Login exitoso. Redirigiendo...');
+                console.log('Datos de usuario recibidos:', data.user);
+                console.log('Token recibido:', data.token ? 'Sí (presente)' : 'No (ausente)');
+                
+                if (!data.user || !data.token) {
+                    throw new Error('Respuesta incompleta del servidor');
+                }
+                
+                // Pequeña pausa para mostrar el mensaje de éxito
+                setTimeout(() => {
+                    login(data.user, data.token);
+                }, 1000);
             } else {
                 // Registro exitoso
-                setError('¡Registro exitoso! Redirigiendo...');
+                setSuccess('¡Registro exitoso! Redirigiendo al login...');
                 setTimeout(() => {
                     router.push('/login');
                 }, 2000);
             }
         } catch (err) {
-            console.error('Error detallado:', err);
-            setError(err.message || 'Error en la autenticación');
+            console.error('Error:', err);
+            setError(err.message || `Error en la ${isLogin ? 'autenticación' : 'registro'}`);
         } finally {
             setIsLoading(false);
         }
@@ -172,10 +215,38 @@ const AuthForm = ({ isLogin }) => {
                     />
                 </motion.div>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }}
+                        className="flex items-center p-3 bg-red-100 text-red-700 rounded"
+                    >
+                        <FiAlertCircle className="mr-2" />
+                        <span>{error}</span>
+                    </motion.div>
+                )}
 
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} disabled={isLoading} className="w-full bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2">
-                    {isLoading ? <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiLock className="inline" />}
+                {success && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }}
+                        className="flex items-center p-3 bg-green-100 text-green-700 rounded"
+                    >
+                        <span>{success}</span>
+                    </motion.div>
+                )}
+
+                <motion.button 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }} 
+                    disabled={isLoading} 
+                    className="w-full bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+                >
+                    {isLoading ? (
+                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <FiLock className="inline" />
+                    )}
                     {isLogin ? 'Acceder al Taller' : 'Registrar'}
                 </motion.button>
             </form>
@@ -196,4 +267,5 @@ const AuthForm = ({ isLogin }) => {
         </motion.div>
     );
 };
+
 export default AuthForm;
