@@ -1,0 +1,225 @@
+-- SISTEMA DE CHAT COMPLETO PARA SUPABASE
+-- Este script borra todas las tablas existentes y las crea desde cero
+-- PRECAUCIÓN: Todos los datos existentes se perderán
+
+-- ================================================
+-- 1. DESACTIVAR RLS Y BORRAR TABLAS EXISTENTES
+-- ================================================
+
+-- Desactivar políticas de seguridad para permitir borrado
+ALTER TABLE IF EXISTS mensajes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS contactos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS usuarios DISABLE ROW LEVEL SECURITY;
+
+-- Eliminar triggers existentes
+DROP TRIGGER IF EXISTS trigger_update_ultima_interaccion ON mensajes;
+DROP TRIGGER IF EXISTS trigger_update_fecha_lectura ON mensajes;
+
+-- Eliminar funciones existentes
+DROP FUNCTION IF EXISTS update_ultima_interaccion();
+DROP FUNCTION IF EXISTS update_fecha_lectura();
+DROP FUNCTION IF EXISTS get_unread_messages_count(UUID);
+
+-- Eliminar tablas existentes en orden para evitar errores de dependencia
+DROP TABLE IF EXISTS mensajes CASCADE;
+DROP TABLE IF EXISTS contactos CASCADE;
+DROP TABLE IF EXISTS usuarios CASCADE;
+
+-- ================================================
+-- 2. CREAR TABLAS DE SISTEMA
+-- ================================================
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  nombre VARCHAR(100) NOT NULL,
+  apellido VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  admin BOOLEAN DEFAULT FALSE,
+  rol VARCHAR(50) DEFAULT 'usuario',
+  fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  ultimo_acceso TIMESTAMP WITH TIME ZONE,
+  activo BOOLEAN DEFAULT TRUE
+);
+
+-- Índice para búsqueda rápida por email
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+
+-- Tabla de contactos (relaciones entre usuarios)
+CREATE TABLE contactos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  contacto_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  estado VARCHAR(20) NOT NULL DEFAULT 'pendiente', -- pendiente, aceptado, rechazado, bloqueado
+  fecha_solicitud TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  fecha_aceptacion TIMESTAMP WITH TIME ZONE,
+  ultima_interaccion TIMESTAMP WITH TIME ZONE,
+  UNIQUE(usuario_id, contacto_id)
+);
+
+-- Índices para la tabla de contactos
+CREATE INDEX idx_contactos_usuario ON contactos(usuario_id);
+CREATE INDEX idx_contactos_contacto ON contactos(contacto_id);
+CREATE INDEX idx_contactos_estado ON contactos(estado);
+
+-- Tabla de mensajes
+CREATE TABLE mensajes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  remitente_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  destinatario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  contenido TEXT NOT NULL,
+  fecha_envio TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  leido BOOLEAN DEFAULT FALSE,
+  fecha_lectura TIMESTAMP WITH TIME ZONE,
+  adjuntos_url TEXT[] DEFAULT '{}'::TEXT[]
+);
+
+-- Índices para la tabla de mensajes
+CREATE INDEX idx_mensajes_remitente ON mensajes(remitente_id);
+CREATE INDEX idx_mensajes_destinatario ON mensajes(destinatario_id);
+CREATE INDEX idx_mensajes_fecha_envio ON mensajes(fecha_envio);
+CREATE INDEX idx_mensajes_leido ON mensajes(leido);
+
+-- ================================================
+-- 3. CREAR FUNCIONES Y TRIGGERS
+-- ================================================
+
+-- Función para actualizar la fecha de última interacción en contactos
+CREATE FUNCTION update_ultima_interaccion()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Actualizar la última interacción para ambos contactos
+  UPDATE contactos 
+  SET ultima_interaccion = NOW() 
+  WHERE 
+    (usuario_id = NEW.remitente_id AND contacto_id = NEW.destinatario_id) OR
+    (usuario_id = NEW.destinatario_id AND contacto_id = NEW.remitente_id);
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para actualizar fecha de interacción cuando se envía un mensaje
+CREATE TRIGGER trigger_update_ultima_interaccion
+AFTER INSERT ON mensajes
+FOR EACH ROW
+EXECUTE FUNCTION update_ultima_interaccion();
+
+-- Función para actualizar la fecha de lectura cuando un mensaje es leído
+CREATE FUNCTION update_fecha_lectura()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.leido = TRUE AND OLD.leido = FALSE THEN
+    NEW.fecha_lectura = NOW();
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para actualizar fecha de lectura
+CREATE TRIGGER trigger_update_fecha_lectura
+BEFORE UPDATE ON mensajes
+FOR EACH ROW
+WHEN (NEW.leido IS DISTINCT FROM OLD.leido)
+EXECUTE FUNCTION update_fecha_lectura();
+
+-- Función para contar mensajes no leídos por usuario
+CREATE FUNCTION get_unread_messages_count(user_id UUID)
+RETURNS TABLE (contacto_id UUID, count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    m.remitente_id,
+    COUNT(m.id)::BIGINT
+  FROM 
+    mensajes m
+  WHERE 
+    m.destinatario_id = user_id
+    AND m.leido = FALSE
+  GROUP BY 
+    m.remitente_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ================================================
+-- 4. CONFIGURAR ROW LEVEL SECURITY (RLS)
+-- ================================================
+
+-- Activar seguridad a nivel de fila
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contactos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mensajes ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para la tabla usuarios
+CREATE POLICY "Usuarios pueden ver sus propios datos" 
+  ON usuarios FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Administradores pueden ver todos los usuarios" 
+  ON usuarios FOR SELECT
+  USING ((SELECT admin FROM usuarios WHERE id = auth.uid()) = TRUE);
+
+CREATE POLICY "Los usuarios pueden actualizar sus propios datos"
+  ON usuarios FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Políticas para la tabla contactos
+CREATE POLICY "Usuarios pueden ver contactos donde son participantes" 
+  ON contactos FOR SELECT
+  USING (usuario_id = auth.uid() OR contacto_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden insertar contactos donde son solicitantes" 
+  ON contactos FOR INSERT
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden actualizar contactos donde son participantes" 
+  ON contactos FOR UPDATE
+  USING (usuario_id = auth.uid() OR contacto_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden eliminar contactos donde son participantes"
+  ON contactos FOR DELETE
+  USING (usuario_id = auth.uid() OR contacto_id = auth.uid());
+
+-- Políticas para la tabla mensajes
+CREATE POLICY "Usuarios pueden ver mensajes donde son participantes" 
+  ON mensajes FOR SELECT
+  USING (remitente_id = auth.uid() OR destinatario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden enviar mensajes como remitentes" 
+  ON mensajes FOR INSERT
+  WITH CHECK (remitente_id = auth.uid());
+
+CREATE POLICY "Destinatarios pueden marcar mensajes como leídos" 
+  ON mensajes FOR UPDATE
+  USING (destinatario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden eliminar sus propios mensajes"
+  ON mensajes FOR DELETE
+  USING (remitente_id = auth.uid());
+
+-- ================================================
+-- 5. CREAR USUARIO ADMINISTRADOR (OPCIONAL)
+-- ================================================
+
+-- Crear el primer usuario admin (reemplaza los valores con tus datos reales)
+-- La contraseña debe estar hasheada adecuadamente en producción
+INSERT INTO usuarios (email, nombre, apellido, password_hash, admin, rol)
+VALUES ('admin@example.com', 'Admin', 'Sistema', 'reemplazar_con_hash_real', TRUE, 'admin');
+
+-- ================================================
+-- 6. VERIFICACIÓN FINAL
+-- ================================================
+
+-- Verificar que las tablas fueron creadas correctamente
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_name IN ('usuarios', 'contactos', 'mensajes');
+
+-- Verificar la estructura de la tabla contactos (para confirmar que usuario_id existe)
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'contactos' 
+ORDER BY ordinal_position;

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/app/context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     const { user, isLoading, isAuthenticated } = useAuth();
@@ -21,7 +21,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             // Si hay roles permitidos, verificar el rol del usuario
             if (allowedRoles.length > 0 && user) {
                 if (!allowedRoles.includes(user.rol)) {
-                    router.push(user.rol === 'admin' ? '/dashboard' : '/client-portal');
+                    // Redireccionar según el rol
+                    if (user.rol === 'admin') {
+                        router.push('/dashboard');
+                    } else {
+                        router.push('/productos');
+                    }
                 }
             }
         }
