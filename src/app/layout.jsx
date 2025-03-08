@@ -1,42 +1,42 @@
-import { Inter } from "next/font/google";
 import "../app/styles/globals.css";
-import { AuthProvider } from "@/app/context/AuthContext"; // ✅ AuthProvider importado correctamente
-import ThemeProvider from '@/components/ThemeProvider';
-
-// Configuración de la fuente Inter
-const inter = Inter({ subsets: ["latin"] });
+import { AuthProvider } from "@/app/context/AuthContext";
 
 // Definición de metadata
 export const metadata = {
-    title: 'Carpinvelsas - Carpintería artesanal',
-    description: 'Sistema de gestión para empresas de carpintería',
-    viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-    themeColor: '#ffffff',
-    colorScheme: 'light'
+    title: "CARPINVEL SAS - Carpintería de Alta Calidad",
+    description: "Diseño y fabricación de muebles personalizados de alta calidad. Artesanía en madera que perdura por generaciones.",
+    keywords: "carpintería, muebles personalizados, diseño en madera, muebles de calidad, carpintería artesanal",
+    author: "CARPINVEL SAS",
+    metadataBase: new URL("https://www.carpinvelsas.com"), // ✅ Añade tu dominio real aquí
+    openGraph: {
+        title: "CARPINVEL SAS",
+        description: "Artesanía en madera que perdura por generaciones",
+        images: [
+            {
+                url: "/og-image.jpg", // ✅ Asegúrate de que esta imagen exista en la carpeta `public/`
+                width: 1200,
+                height: 630,
+                alt: "CARPINVEL SAS",
+            },
+        ],
+    },
 };
 
 // Layout principal
 export default function RootLayout({ children }) {
     return (
-        <html lang="es" className="light" style={{ colorScheme: 'light' }}>
+        <html lang="es">
             <head>
                 {/* Favicon y metadatos adicionales */}
                 <link rel="icon" href="/favicon.ico" sizes="any" />
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                 <link rel="manifest" href="/site.webmanifest" />
-                <meta name="color-scheme" content="light" />
-                <meta name="theme-color" content="#ffffff" />
-                <meta name="apple-mobile-web-app-capable" content="yes" />
-                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-                <meta name="format-detection" content="telephone=no" />
             </head>
-            <body className="bg-white text-gray-900 min-h-screen">
-                <ThemeProvider>
-                    {/* Proveedor de autenticación */}
-                    <AuthProvider>
-                        {children}
-                    </AuthProvider>
-                </ThemeProvider>
+            <body className="bg-amber-50">
+                {/* Proveedor de autenticación */}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </body>
         </html>
     );
