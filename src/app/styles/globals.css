@@ -54,3 +54,17 @@ html {
   background: #d97706;
   color: #fff7ed;
 }
+
+/* Fix para dispositivos móviles */
+@media (max-width: 768px) {
+  /* Forzar colores claros en dispositivos móviles con tema oscuro */
+  body {
+    background-color: var(--background) !important;
+    color: var(--foreground) !important;
+  }
+  
+  /* Fix específico para Safari */
+  @supports (-webkit-touch-callout: none) {
+    body { background-color: #ffffff !important; }
+  }
+}
