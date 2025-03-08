@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { FiArrowLeft, FiCheck, FiStar, FiShoppingBag, FiInfo, FiTruck, FiShield, FiImage, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import HorizontalMenu from '@/components/layout/HorizontalMenu';
+import VerticalMenu from '@/components/layout/VerticalMenu';
 
 // Datos de demostración (en un proyecto real vendrían de una API/backend)
 const productos = [
@@ -232,24 +232,10 @@ export default function DetalleProducto() {
   
   return (
     <div className="min-h-screen bg-amber-50">
-      {/* Menú horizontal */}
-      <HorizontalMenu />
+      {/* Menú vertical */}
+      <VerticalMenu />
       
-      {/* Navegación mejorada con botones para volver */}
-      <div className="absolute top-6 left-6 flex items-center gap-4 z-10">
-        <Link href="/productos">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/90 hover:bg-amber-500 shadow-md text-white transition-all duration-300"
-          >
-            <FiArrowLeft />
-            <span className="hidden sm:inline">Volver al Catálogo</span>
-          </motion.button>
-        </Link>
-      </div>
-      
-      <div className="container max-w-7xl mx-auto px-4 py-8 md:py-16 pt-24 md:pt-16">
+      <div className="container mx-auto px-4 py-12">
         {/* Migas de pan y navegación */}
         <div className="mb-8">
           <nav className="flex items-center text-sm text-amber-800">

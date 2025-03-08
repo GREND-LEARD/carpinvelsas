@@ -2,8 +2,6 @@
 import AuthForm from '@/components/forms/AuthForm';
 import { motion } from 'framer-motion';
 import { FiCoffee, FiTool, FiUsers } from 'react-icons/fi';
-import Link from 'next/link';
-import BackToHome from '@/components/navigation/BackToHome';
 
 export default function LoginPage() {
     const features = [
@@ -14,9 +12,6 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#F5EFE6] p-4 overflow-x-hidden">
-            {/* Navegación */}
-            <BackToHome showBack={true} theme="light" />
-            
             {/* Fondo con efecto suave */}
             <motion.div
                 initial={{ opacity: 0 }}
@@ -69,63 +64,58 @@ export default function LoginPage() {
                 />
             </motion.div>
 
-            <div className="container max-w-6xl mx-auto relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                    {/* Columna de formulario */}
-                    <div className="flex justify-center">
-                        <AuthForm isLogin={true} />
+            <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 z-10 px-4 md:px-8">
+                {/* Contenido izquierdo */}
+                <motion.div 
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="lg:w-1/2 text-[#4F3422] space-y-6 lg:space-y-8 p-4 lg:p-8"
+                >
+                    <div className="space-y-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="inline-block px-3 py-1 md:px-4 md:py-1 bg-[#4F3422]/10 rounded-full"
+                        >
+                            <span className="text-xs md:text-sm font-medium text-[#4F3422]">✨ Bienvenido de nuevo</span>
+                        </motion.div>
+                        <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-[#4F3422] leading-tight">
+                            Accede a tu Portal
+                        </h1>
+                        <p className="text-lg md:text-xl text-[#4F3422]/90 leading-relaxed">
+                            Gestiona tus proyectos de carpintería de manera eficiente
+                        </p>
                     </div>
                     
-                    {/* Columna de información */}
-                    <div className="text-center lg:text-left">
-                        <motion.h1
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-4xl md:text-5xl font-bold text-[#4F3422] mb-6 font-serif"
-                        >
-                            El Arte de la Madera en Tus Manos
-                        </motion.h1>
-                        
-                        <motion.p
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="text-[#4F3422]/80 text-lg mb-8"
-                        >
-                            Accede a tu cuenta para gestionar proyectos, realizar pedidos personalizados y conectar con nuestros artesanos.
-                        </motion.p>
-                        
-                        <div className="space-y-4 mb-8">
-                            {features.map((feature, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, x: -50 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.4 + (index * 0.1) }}
-                                    className="flex items-center bg-white/60 backdrop-blur-sm p-4 rounded-lg shadow-sm"
-                                >
-                                    <div className="bg-[#4F3422] p-2 rounded-full text-white mr-4">
-                                        {feature.icon}
-                                    </div>
-                                    <span className="text-[#4F3422]">{feature.text}</span>
-                                </motion.div>
-                            ))}
-                        </div>
-                        
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.7 }}
-                            className="text-[#4F3422]/70"
-                        >
-                            ¿No tienes una cuenta?{' '}
-                            <Link href="/register" className="text-[#4F3422] font-semibold underline hover:text-amber-600 transition-colors">
-                                Regístrate aquí
-                            </Link>
-                        </motion.div>
+                    <div className="space-y-4 mt-8">
+                        {features.map((feature, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 + (index * 0.1) }}
+                                className="flex items-center gap-3 text-[#4F3422]"
+                            >
+                                <div className="p-2 bg-[#4F3422]/10 rounded-lg">
+                                    {feature.icon}
+                                </div>
+                                <span className="text-sm md:text-base">{feature.text}</span>
+                            </motion.div>
+                        ))}
                     </div>
-                </div>
+                </motion.div>
+
+                {/* Formulario */}
+                <motion.div
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full lg:w-1/2 px-4 md:px-0"
+                >
+                    <AuthForm isLogin={true} />
+                </motion.div>
             </div>
 
             {/* Footer */}

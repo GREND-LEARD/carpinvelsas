@@ -62,16 +62,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (userData, token) => {
         try {
-            console.log('Iniciando sesión con:', userData);
-            
-            // Validar que exista un token
-            if (!token) {
-                throw new Error('No se proporcionó un token de autenticación');
+            if (!userData || !token) {
+                throw new Error('Datos de usuario o token faltantes');
             }
+
+            console.log('Iniciando sesión para:', userData.email);
             
             // Guardar en localStorage
             localStorage.setItem('token', token);
-            localStorage.setItem('auth_token', token); // Duplicamos el token con ambos nombres para compatibilidad
             localStorage.setItem('user', JSON.stringify(userData));
             
             // Actualizar estado
@@ -95,7 +93,6 @@ export const AuthProvider = ({ children }) => {
         try {
             // Limpiar localStorage
             localStorage.removeItem('token');
-            localStorage.removeItem('auth_token'); // Eliminar también la versión duplicada
             localStorage.removeItem('user');
             
             // Actualizar estado
