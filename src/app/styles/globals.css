@@ -7,19 +7,17 @@
   --foreground: #171717;
 }
 
-/* Ignorar configuración de tema oscuro */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #ffffff;
-    --foreground: #171717;
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
 }
 
 body {
-  color: var(--foreground) !important;
-  background: var(--background) !important;
-  background-color: #ffffff !important;
-  font-family: Arial, Helvetica, sans-serif !important;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .circular-gallery {
@@ -49,39 +47,10 @@ body {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
-  background-color: #ffffff !important;
-  color-scheme: light !important;
 }
 
 /* Custom selection */
 ::selection {
   background: #d97706;
   color: #fff7ed;
-}
-
-/* Fix específico para Vercel */
-html, body {
-  background-color: #ffffff !important;
-  color: #171717 !important;
-}
-
-h1, h2, h3, h4, h5, h6, p, span, div, a, button {
-  color: inherit !important;
-}
-
-/* Fix para dispositivos móviles */
-@media (max-width: 768px) {
-  /* Forzar colores claros en dispositivos móviles con tema oscuro */
-  html, body {
-    background-color: #ffffff !important;
-    color: #171717 !important;
-  }
-  
-  /* Fix específico para Safari */
-  @supports (-webkit-touch-callout: none) {
-    body { 
-      background-color: #ffffff !important; 
-      color: #171717 !important;
-    }
-  }
 }
