@@ -3,6 +3,7 @@ import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useAuth } from '@/app/context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiBox, FiSettings, FiUsers, FiDollarSign, FiCalendar, FiLogOut, FiTool, FiStar, FiFileText, FiGrid } from 'react-icons/fi';
+import Link from 'next/link';
 
 const stats = [
     { id: 1, title: "Proyectos Activos", value: "12", icon: <FiTool className="w-6 h-6" />, color: "bg-amber-500" },
@@ -18,9 +19,26 @@ const projects = [
 ];
 
 const notifications = [
-    { id: 1, text: "Nuevo pedido de diseño personalizado", time: "2h ago", unread: true },
-    { id: 2, text: "Aprobación de presupuesto pendiente", time: "5h ago", unread: false },
-    { id: 3, text: "Recordatorio: Entrega proyecto #123", time: "1d ago", unread: true },
+    { 
+        id: 1, 
+        text: "Nuevo presupuesto recibido: Mesa de comedor rústica", 
+        time: "2h ago", 
+        unread: true,
+        link: "/dashboard/presupuestos" 
+    },
+    { 
+        id: 2, 
+        text: "Presupuesto pendiente de revisión: Armario para dormitorio", 
+        time: "5h ago", 
+        unread: true,
+        link: "/dashboard/presupuestos" 
+    },
+    { 
+        id: 3, 
+        text: "Recordatorio: Entrega proyecto #123", 
+        time: "1d ago", 
+        unread: false 
+    },
 ];
 
 function Dashboard() {
@@ -64,28 +82,29 @@ function Dashboard() {
                         {/* Menú interactivo */}
                         <div className="space-y-4 flex-1">
                             {[
-                                { icon: <FiGrid />, text: "Panel", count: 4 },
-                                { icon: <FiTool />, text: "Proyectos", count: 12 },
-                                { icon: <FiUsers />, text: "Clientes", count: 23 },
-                                { icon: <FiFileText />, text: "Presupuestos", count: 8 },
-                                { icon: <FiCalendar />, text: "Calendario" },
-                                { icon: <FiSettings />, text: "Configuración" },
+                                { icon: <FiGrid />, text: "Panel", href: "/dashboard", count: 4 },
+                                { icon: <FiTool />, text: "Proyectos", href: "#", count: 12 },
+                                { icon: <FiUsers />, text: "Clientes", href: "#", count: 23 },
+                                { icon: <FiFileText />, text: "Presupuestos", href: "/dashboard/presupuestos", count: 8 },
+                                { icon: <FiCalendar />, text: "Calendario", href: "#" },
+                                { icon: <FiSettings />, text: "Configuración", href: "#" },
                             ].map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    whileHover={{ x: 10 }}
-                                    className="flex items-center justify-between p-3 rounded-xl group hover:bg-amber-100 transition-colors cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-amber-700 text-xl">{item.icon}</span>
-                                        <span className="text-amber-900">{item.text}</span>
-                                    </div>
-                                    {item.count && (
-                                        <span className="bg-amber-700 text-amber-50 px-2 rounded-full text-sm">
-                                            {item.count}
-                                        </span>
-                                    )}
-                                </motion.div>
+                                <Link href={item.href} key={i}>
+                                    <motion.div
+                                        whileHover={{ x: 10 }}
+                                        className="flex items-center justify-between p-3 rounded-xl group hover:bg-amber-100 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-amber-700 text-xl">{item.icon}</span>
+                                            <span className="text-amber-900">{item.text}</span>
+                                        </div>
+                                        {item.count && (
+                                            <span className="bg-amber-700 text-amber-50 px-2 rounded-full text-sm">
+                                                {item.count}
+                                            </span>
+                                        )}
+                                    </motion.div>
+                                </Link>
                             ))}
                         </div>
 
@@ -195,14 +214,26 @@ function Dashboard() {
                             <h2 className="text-2xl font-bold text-amber-900 mb-6">Notificaciones</h2>
                             <div className="space-y-4">
                                 {notifications.map((notification) => (
-                                    <motion.div
-                                        key={notification.id}
-                                        whileHover={{ x: 5 }}
-                                        className={`p-4 rounded-xl ${notification.unread ? 'bg-amber-100 border-l-4 border-amber-500' : 'bg-white'}`}
-                                    >
-                                        <p className="text-amber-900">{notification.text}</p>
-                                        <p className="text-sm text-amber-500 mt-2">{notification.time}</p>
-                                    </motion.div>
+                                    notification.link ? (
+                                        <Link key={notification.id} href={notification.link}>
+                                            <motion.div
+                                                whileHover={{ x: 5 }}
+                                                className={`p-4 rounded-xl ${notification.unread ? 'bg-amber-100 border-l-4 border-amber-500' : 'bg-white'}`}
+                                            >
+                                                <p className="text-amber-900">{notification.text}</p>
+                                                <p className="text-sm text-amber-500 mt-2">{notification.time}</p>
+                                            </motion.div>
+                                        </Link>
+                                    ) : (
+                                        <motion.div
+                                            key={notification.id}
+                                            whileHover={{ x: 5 }}
+                                            className={`p-4 rounded-xl ${notification.unread ? 'bg-amber-100 border-l-4 border-amber-500' : 'bg-white'}`}
+                                        >
+                                            <p className="text-amber-900">{notification.text}</p>
+                                            <p className="text-sm text-amber-500 mt-2">{notification.time}</p>
+                                        </motion.div>
+                                    )
                                 ))}
                             </div>
                         </motion.div>

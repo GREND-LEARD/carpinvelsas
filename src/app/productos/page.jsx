@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FiFilter, FiChevronDown, FiChevronUp, FiX, FiSearch, FiGrid, FiList } from 'react-icons/fi';
-import VerticalMenu from '@/components/layout/VerticalMenu';
+import HorizontalMenu from '@/components/layout/HorizontalMenu';
 
 // Datos de categorías (en un proyecto real esto vendría de una API o base de datos)
 const categorias = [
@@ -216,29 +216,27 @@ export default function Catalogo() {
 
   return (
     <div className="min-h-screen bg-amber-50">
-      {/* Menú vertical */}
-      <VerticalMenu />
+      {/* Menú horizontal */}
+      <HorizontalMenu />
       
-      {/* Hero del catálogo */}
-      <div className="relative h-64 md:h-80 bg-[url('/taller-bg.jpg')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-amber-900/70 flex items-center justify-center">
-          <div className="text-center">
-            <motion.h1 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-serif font-bold text-amber-50 mb-4"
-            >
-              Nuestro Catálogo
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-amber-100 max-w-2xl mx-auto px-4"
-            >
-              Descubre nuestra amplia selección de muebles artesanales creados con pasión y maestría
-            </motion.p>
-          </div>
+      {/* Hero section */}
+      <div className="w-full h-96 bg-[url('/taller-bg.jpg')] bg-cover bg-center relative">
+        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-6 text-center">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl md:text-6xl font-serif font-bold text-white mb-4"
+          >
+            Nuestro Catálogo
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl text-amber-100 max-w-2xl"
+          >
+            Descubre nuestra colección de muebles artesanales creados con pasión y dedicación para transformar tus espacios.
+          </motion.p>
         </div>
       </div>
       

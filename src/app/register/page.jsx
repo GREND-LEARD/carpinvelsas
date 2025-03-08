@@ -1,179 +1,106 @@
 "use client";
 import AuthForm from '@/components/forms/AuthForm';
 import { motion } from 'framer-motion';
-import { FiShield, FiStar, FiHeart, FiTrendingUp, FiCheck, FiAward, FiClock } from 'react-icons/fi';
+import { FiBox, FiClipboard, FiCreditCard } from 'react-icons/fi';
+import Link from 'next/link';
+import BackToHome from '@/components/navigation/BackToHome';
 
 export default function RegisterPage() {
     const benefits = [
-        { 
-            icon: <FiShield size={24} />, 
-            text: "Acceso Seguro y Personalizado",
-            description: "Sistema de autenticación avanzado para tu tranquilidad"
-        },
-        { 
-            icon: <FiStar size={24} />, 
-            text: "Seguimiento en Tiempo Real",
-            description: "Monitorea tus proyectos con actualizaciones instantáneas"
-        },
-        { 
-            icon: <FiHeart size={24} />, 
-            text: "Atención Personalizada",
-            description: "Servicio exclusivo adaptado a tus necesidades"
-        },
-        { 
-            icon: <FiTrendingUp size={24} />, 
-            text: "Gestión Eficiente",
-            description: "Optimiza tus procesos y mejora la productividad"
-        }
-    ];
-
-    const features = [
-        "Comunicación directa con expertos",
-        "Seguimiento fotográfico del progreso",
-        "Presupuestos detallados",
-        "Calendario de entregas"
+        { icon: <FiBox size={24} />, text: "Presupuestos personalizados" },
+        { icon: <FiClipboard size={24} />, text: "Seguimiento de proyectos" },
+        { icon: <FiCreditCard size={24} />, text: "Pagos seguros" }
     ];
 
     return (
-        <div className="min-h-screen min-w-full flex items-center justify-center bg-[#F5EFE6] p-4 overflow-x-hidden relative">
-            {/* Fondo con efecto suave - ajustado para cubrir toda la página */}
+        <div className="min-h-screen flex items-center justify-center bg-[#F5EFE6] p-4 overflow-x-hidden">
+            {/* Navegación */}
+            <BackToHome showBack={true} theme="light" />
+            
+            {/* Fondo con efecto de madera */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="fixed inset-0 bg-gradient-to-br from-[#4F3422]/30 via-[#4F3422]/20 to-[#4F3422]/10 backdrop-blur-sm"
+                className="absolute inset-0 bg-[url('/textura-madera.jpg')] bg-cover opacity-10"
             />
             
-            {/* Elementos decorativos flotantes - ajustados a fixed */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                {[
-                    { left: "20%", top: "20%" },
-                    { left: "40%", top: "35%" },
-                    { left: "60%", top: "50%" },
-                    { left: "25%", top: "65%" },
-                    { left: "75%", top: "80%" }
-                ].map((position, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 100 }}
-                        animate={{ 
-                            opacity: [0.3, 0.5, 0.3],
-                            y: [-10, 10, -10],
-                            x: [-10, 10, -10]
-                        }}
-                        transition={{
-                            duration: 8,
-                            delay: i * 0.5,
-                            repeat: Infinity,
-                            repeatType: "reverse"
-                        }}
-                        className="absolute w-24 h-24 bg-[#4F3422]/10 rounded-full blur-xl"
-                        style={position}
-                    />
-                ))}
-            </div>
-
-            {/* Logo - ajustado a fixed */}
+            {/* Overlay gradiente */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#F5EFE6] via-[#F5EFE6]/80 to-[#F5EFE6]/70"></div>
+            
+            {/* Elementos decorativos */}
             <motion.div 
-                initial={{ opacity: 0, scale: 0.8, rotate: -12 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ delay: 0.2, type: "spring" }}
-                className="fixed top-4 right-4 md:top-10 md:right-10 text-[#4F3422] z-20"
-            >
-                <motion.img 
-                    src="/logo.png" 
-                    alt="Logo" 
-                    className="w-16 h-16 md:w-24 md:h-24 object-contain"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                />
-            </motion.div>
-            {/* Contenido principal */}
-            <div className="container mx-auto flex flex-col-reverse lg:flex-row-reverse items-center justify-between gap-6 lg:gap-12 z-10 px-4 md:px-8 py-20 md:py-12 relative">
-                <motion.div 
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="lg:w-1/2 text-[#4F3422] space-y-6 lg:space-y-8 p-4 lg:p-8"
-                >
-                    <div className="space-y-4">
-                        <motion.div
+                initial={{ opacity: 0, rotate: -10 }}
+                animate={{ opacity: 0.5, rotate: -5 }}
+                transition={{ duration: 1.5 }}
+                className="absolute top-[15%] right-[10%] w-32 h-32 md:w-48 md:h-48 bg-[url('/sierra-circular.svg')] bg-contain bg-no-repeat opacity-20 z-0"
+            />
+            
+            <motion.div 
+                initial={{ opacity: 0, rotate: 20 }}
+                animate={{ opacity: 0.5, rotate: 15 }}
+                transition={{ duration: 1.5 }}
+                className="absolute bottom-[15%] left-[10%] w-32 h-32 md:w-48 md:h-48 bg-[url('/martillo.svg')] bg-contain bg-no-repeat opacity-20 z-0"
+            />
+
+            <div className="container max-w-6xl mx-auto relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    {/* Columna de información */}
+                    <div className="order-2 lg:order-1 text-center lg:text-left">
+                        <motion.h1
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="inline-block px-3 py-1 md:px-4 md:py-1 bg-[#4F3422]/10 rounded-full"
+                            transition={{ delay: 0.2 }}
+                            className="text-4xl md:text-5xl font-bold text-[#4F3422] mb-6 font-serif"
                         >
-                            <span className="text-xs md:text-sm font-medium text-[#4F3422]">✨ Experiencia Premium</span>
+                            Únete a Nuestra Comunidad
+                        </motion.h1>
+                        
+                        <motion.p
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="text-[#4F3422]/80 text-lg mb-8"
+                        >
+                            Regístrate para acceder a beneficios exclusivos y comenzar 
+                            a crear proyectos de carpintería a medida.
+                        </motion.p>
+                        
+                        <div className="space-y-4 mb-8">
+                            {benefits.map((benefit, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, x: -50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.4 + (index * 0.1) }}
+                                    className="flex items-center bg-white/60 backdrop-blur-sm p-4 rounded-lg shadow-sm"
+                                >
+                                    <div className="bg-[#4F3422] p-2 rounded-full text-white mr-4">
+                                        {benefit.icon}
+                                    </div>
+                                    <span className="text-[#4F3422]">{benefit.text}</span>
+                                </motion.div>
+                            ))}
+                        </div>
+                        
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.7 }}
+                            className="text-[#4F3422]/70"
+                        >
+                            ¿Ya tienes una cuenta?{' '}
+                            <Link href="/login" className="text-[#4F3422] font-semibold underline hover:text-amber-600 transition-colors">
+                                Inicia sesión aquí
+                            </Link>
                         </motion.div>
-                        <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-[#4F3422] leading-tight">
-                            Únete a la Excelencia en Carpintería
-                        </h1>
-                        <p className="text-lg md:text-xl text-[#4F3422]/90 leading-relaxed">
-                            Descubre una nueva forma de gestionar tus proyectos con tecnología de vanguardia
-                        </p>
-                    </div>
-
-                    {/* Lista de características - ajustada para móvil */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mt-6 lg:mt-8">
-                        {features.map((feature, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 + (index * 0.1) }}
-                                className="flex items-center gap-2 text-[#4F3422] text-sm md:text-base"
-                            >
-                                <FiCheck className="text-[#4F3422] flex-shrink-0" />
-                                <span>{feature}</span>
-                            </motion.div>
-                        ))}
                     </div>
                     
-                    {/* Beneficios - ajustados para móvil */}
-                    <div className="space-y-3 md:space-y-4 mt-6 lg:mt-8">
-                        {benefits.map((benefit, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.7 + (index * 0.1) }}
-                                whileHover={{ scale: 1.02, x: 10 }}
-                                className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-[#4F3422]/5 rounded-lg hover:bg-[#4F3422]/10 transition-all cursor-pointer"
-                            >
-                                <div className="p-2 bg-[#4F3422]/10 rounded-lg text-[#4F3422] flex-shrink-0">
-                                    {benefit.icon}
-                                </div>
-                                <div>
-                                    <h3 className="text-[#4F3422] font-semibold text-sm md:text-base">{benefit.text}</h3>
-                                    <p className="text-[#4F3422]/80 text-xs md:text-sm">{benefit.description}</p>
-                                </div>
-                            </motion.div>
-                        ))}
+                    {/* Columna de formulario */}
+                    <div className="order-1 lg:order-2 flex justify-center">
+                        <AuthForm isLogin={false} />
                     </div>
-                </motion.div>
-
-                {/* Formulario */}
-                <motion.div
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full lg:w-1/2 px-4 md:px-0"
-                >
-                    <AuthForm isLogin={false} />
-                </motion.div>
+                </div>
             </div>
-
-            {/* Footer - ajustado a fixed */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-                className="fixed bottom-2 md:bottom-4 text-[#4F3422]/80 text-xs md:text-sm text-center w-full px-4 z-20"
-            >
-                <p className="flex items-center justify-center gap-2">
-                    <FiClock className="text-[#4F3422]" />
-                    © 2024 Carpinvelsas. Transformando ideas en realidad.
-                </p>
-            </motion.div>
         </div>
     );
 }

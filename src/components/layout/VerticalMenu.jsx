@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { FiMenu, FiX, FiTool, FiPenTool, FiBook, FiPhone, FiUser, FiCalendar, FiLogOut, FiHome, FiShoppingBag, FiSettings } from "react-icons/fi";
+import { FiMenu, FiX, FiTool, FiPenTool, FiBook, FiPhone, FiUser, FiCalendar, FiLogOut, FiHome, FiShoppingBag, FiSettings, FiFileText } from "react-icons/fi";
 import { useAuth } from "@/app/context/AuthContext";
 
 export default function VerticalMenu() {
@@ -31,6 +31,7 @@ export default function VerticalMenu() {
         { name: "Inicio", icon: <FiHome />, href: "/" },
         { name: "Productos", icon: <FiTool />, href: "/productos" },
         { name: "Proyectos", icon: <FiPenTool />, href: "/proyectos" },
+        { name: "Presupuestos", icon: <FiFileText />, href: "/presupuestos" },
         { name: "Blog", icon: <FiBook />, href: "/blog" },
         { name: "Contacto", icon: <FiPhone />, href: "/contact" },
         { name: "Calendario", icon: <FiCalendar className="text-xl" />, href: "/calendario" },

@@ -1,6 +1,7 @@
 "use client";
 import { motion } from 'framer-motion';
 import { FiMail, FiMessageSquare, FiPhone, FiClock, FiMapPin, FiSend } from 'react-icons/fi';
+import BackToHome from '@/components/navigation/BackToHome';
 
 export default function ContactPage() {
     const contactInfo = [
@@ -26,6 +27,9 @@ export default function ContactPage() {
 
     return (
         <div className="min-h-screen min-w-full flex items-center justify-center p-4 overflow-x-hidden relative">
+            {/* Navegación */}
+            <BackToHome showBack={true} theme="light" />
+            
             {/* Fondo con patrón de madera */}
             <motion.div 
                 className="fixed inset-0"
