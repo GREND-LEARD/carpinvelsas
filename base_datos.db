@@ -1,4 +1,4 @@
--- SISTEMA DE CHAT COMPLETO PARA SUPABASE
+-- SISTEMA COMPLETO DE CARPINTERÍA CON CHAT Y PRESUPUESTOS
 -- Este script borra todas las tablas existentes y las crea desde cero
 -- PRECAUCIÓN: Todos los datos existentes se perderán
 
@@ -10,19 +10,29 @@
 ALTER TABLE IF EXISTS mensajes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS contactos DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS usuarios DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS presupuestos DISABLE ROW LEVEL SECURITY; 
+ALTER TABLE IF EXISTS notificaciones DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS historial_presupuestos DISABLE ROW LEVEL SECURITY;
 
 -- Eliminar triggers existentes
 DROP TRIGGER IF EXISTS trigger_update_ultima_interaccion ON mensajes;
 DROP TRIGGER IF EXISTS trigger_update_fecha_lectura ON mensajes;
+DROP TRIGGER IF EXISTS trigger_update_presupuesto ON presupuestos;
+DROP TRIGGER IF EXISTS trigger_historial_presupuestos ON presupuestos;
 
 -- Eliminar funciones existentes
 DROP FUNCTION IF EXISTS update_ultima_interaccion();
 DROP FUNCTION IF EXISTS update_fecha_lectura();
 DROP FUNCTION IF EXISTS get_unread_messages_count(UUID);
+DROP FUNCTION IF EXISTS update_presupuesto_fecha();
+DROP FUNCTION IF EXISTS registrar_cambio_estado();
 
 -- Eliminar tablas existentes en orden para evitar errores de dependencia
+DROP TABLE IF EXISTS historial_presupuestos CASCADE;
 DROP TABLE IF EXISTS mensajes CASCADE;
 DROP TABLE IF EXISTS contactos CASCADE;
+DROP TABLE IF EXISTS notificaciones CASCADE;
+DROP TABLE IF EXISTS presupuestos CASCADE;
 DROP TABLE IF EXISTS usuarios CASCADE;
 
 -- ================================================
@@ -80,6 +90,67 @@ CREATE INDEX idx_mensajes_remitente ON mensajes(remitente_id);
 CREATE INDEX idx_mensajes_destinatario ON mensajes(destinatario_id);
 CREATE INDEX idx_mensajes_fecha_envio ON mensajes(fecha_envio);
 CREATE INDEX idx_mensajes_leido ON mensajes(leido);
+
+-- ================================================
+-- 2.1. TABLAS PARA SISTEMA DE PRESUPUESTOS
+-- ================================================
+
+-- Tabla de presupuestos
+CREATE TABLE presupuestos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  categoria TEXT NOT NULL,
+  descripcion TEXT,
+  material TEXT NOT NULL,
+  acabado TEXT NOT NULL,
+  dimensiones JSONB NOT NULL,
+  unidades INTEGER NOT NULL DEFAULT 1,
+  comentarios TEXT,
+  imagenes JSONB[] DEFAULT '{}',
+  presupuesto JSONB NOT NULL,
+  estado TEXT NOT NULL DEFAULT 'pendiente',
+  fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para la tabla de presupuestos
+CREATE INDEX idx_presupuestos_usuario ON presupuestos(usuario_id);
+CREATE INDEX idx_presupuestos_estado ON presupuestos(estado);
+CREATE INDEX idx_presupuestos_fecha ON presupuestos(fecha_creacion);
+
+-- Tabla de notificaciones
+CREATE TABLE notificaciones (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  leido BOOLEAN DEFAULT FALSE,
+  datos JSONB DEFAULT '{}',
+  fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  fecha_lectura TIMESTAMP WITH TIME ZONE
+);
+
+-- Índices para la tabla de notificaciones
+CREATE INDEX idx_notificaciones_usuario ON notificaciones(usuario_id);
+CREATE INDEX idx_notificaciones_leido ON notificaciones(leido);
+CREATE INDEX idx_notificaciones_fecha ON notificaciones(fecha_creacion);
+
+-- Tabla para historial de estados de presupuestos (Nueva)
+CREATE TABLE historial_presupuestos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  presupuesto_id UUID NOT NULL REFERENCES presupuestos(id) ON DELETE CASCADE,
+  estado_anterior TEXT,
+  estado_nuevo TEXT NOT NULL,
+  cambio_por UUID REFERENCES usuarios(id),
+  comentario TEXT,
+  fecha_cambio TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para historial de presupuestos
+CREATE INDEX idx_historial_presupuesto_id ON historial_presupuestos(presupuesto_id);
+CREATE INDEX idx_historial_fecha_cambio ON historial_presupuestos(fecha_cambio);
 
 -- ================================================
 -- 3. CREAR FUNCIONES Y TRIGGERS
@@ -143,6 +214,94 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Función para actualizar fecha de actualización del presupuesto (Nueva)
+CREATE FUNCTION update_presupuesto_fecha()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.fecha_actualizacion = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para actualizar fecha automáticamente
+CREATE TRIGGER trigger_update_presupuesto
+BEFORE UPDATE ON presupuestos
+FOR EACH ROW
+EXECUTE FUNCTION update_presupuesto_fecha();
+
+-- Función para registrar cambios de estado en presupuestos (Nueva)
+CREATE FUNCTION registrar_cambio_estado()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.estado IS DISTINCT FROM NEW.estado THEN
+    INSERT INTO historial_presupuestos (
+      presupuesto_id,
+      estado_anterior,
+      estado_nuevo,
+      cambio_por
+    ) VALUES (
+      NEW.id,
+      OLD.estado,
+      NEW.estado,
+      auth.uid()
+    );
+    
+    -- También crear notificación para el usuario
+    IF NEW.estado = 'aprobado' THEN
+      INSERT INTO notificaciones (
+        usuario_id,
+        tipo,
+        titulo,
+        mensaje,
+        datos
+      ) VALUES (
+        NEW.usuario_id,
+        'presupuesto_aprobado',
+        'Presupuesto Aprobado',
+        'Tu presupuesto para "' || NEW.nombre || '" ha sido aprobado.',
+        jsonb_build_object('presupuesto_id', NEW.id)
+      );
+    ELSIF NEW.estado = 'rechazado' THEN
+      INSERT INTO notificaciones (
+        usuario_id,
+        tipo,
+        titulo,
+        mensaje,
+        datos
+      ) VALUES (
+        NEW.usuario_id,
+        'presupuesto_rechazado',
+        'Presupuesto Rechazado',
+        'Tu presupuesto para "' || NEW.nombre || '" ha sido rechazado.',
+        jsonb_build_object('presupuesto_id', NEW.id)
+      );
+    ELSIF NEW.estado = 'completado' THEN
+      INSERT INTO notificaciones (
+        usuario_id,
+        tipo,
+        titulo,
+        mensaje,
+        datos
+      ) VALUES (
+        NEW.usuario_id,
+        'presupuesto_completado',
+        'Presupuesto Completado',
+        'Tu proyecto "' || NEW.nombre || '" ha sido completado.',
+        jsonb_build_object('presupuesto_id', NEW.id)
+      );
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para registrar historial de cambios
+CREATE TRIGGER trigger_historial_presupuestos
+AFTER UPDATE ON presupuestos
+FOR EACH ROW
+EXECUTE FUNCTION registrar_cambio_estado();
+
 -- ================================================
 -- 4. CONFIGURAR ROW LEVEL SECURITY (RLS)
 -- ================================================
@@ -151,6 +310,9 @@ $$ LANGUAGE plpgsql;
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contactos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mensajes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presupuestos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE historial_presupuestos ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para la tabla usuarios
 CREATE POLICY "Usuarios pueden ver sus propios datos" 
@@ -199,6 +361,53 @@ CREATE POLICY "Usuarios pueden eliminar sus propios mensajes"
   ON mensajes FOR DELETE
   USING (remitente_id = auth.uid());
 
+-- Políticas para la tabla presupuestos
+CREATE POLICY "Usuarios pueden ver sus propios presupuestos" 
+  ON presupuestos FOR SELECT
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden ver todos los presupuestos" 
+  ON presupuestos FOR SELECT
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
+
+CREATE POLICY "Usuarios pueden crear sus propios presupuestos" 
+  ON presupuestos FOR INSERT
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden actualizar sus propios presupuestos" 
+  ON presupuestos FOR UPDATE
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden actualizar cualquier presupuesto" 
+  ON presupuestos FOR UPDATE
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
+
+-- Políticas para la tabla notificaciones
+CREATE POLICY "Usuarios pueden ver sus propias notificaciones" 
+  ON notificaciones FOR SELECT
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden crear notificaciones para cualquier usuario" 
+  ON notificaciones FOR INSERT
+  WITH CHECK ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin' OR usuario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden marcar sus notificaciones como leídas" 
+  ON notificaciones FOR UPDATE
+  USING (usuario_id = auth.uid());
+
+-- Políticas para historial de presupuestos
+CREATE POLICY "Usuarios pueden ver historial de sus propios presupuestos"
+  ON historial_presupuestos FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM presupuestos 
+    WHERE presupuestos.id = presupuesto_id 
+    AND presupuestos.usuario_id = auth.uid()
+  ));
+
+CREATE POLICY "Administradores pueden ver todo el historial de presupuestos"
+  ON historial_presupuestos FOR SELECT
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
+
 -- ================================================
 -- 5. CREAR USUARIO ADMINISTRADOR (OPCIONAL)
 -- ================================================
@@ -209,17 +418,32 @@ INSERT INTO usuarios (email, nombre, apellido, password_hash, admin, rol)
 VALUES ('admin@example.com', 'Admin', 'Sistema', 'reemplazar_con_hash_real', TRUE, 'admin');
 
 -- ================================================
--- 6. VERIFICACIÓN FINAL
+-- 6. CONFIGURACIÓN DE STORAGE PARA IMÁGENES
+-- ================================================
+
+-- Estos comandos deben ejecutarse manualmente desde el panel de Supabase
+-- ya que la creación de buckets se hace desde la interfaz o el CLI:
+
+-- 1. Crear bucket para imágenes de presupuestos:
+--    NOMBRE: referencias
+--    PUBLIC: true
+
+-- 2. Crear políticas de acceso para el bucket:
+--    - Permitir lectura pública
+--    - Permitir escritura solo a usuarios autenticados
+
+-- ================================================
+-- 7. VERIFICACIÓN FINAL
 -- ================================================
 
 -- Verificar que las tablas fueron creadas correctamente
 SELECT table_name 
 FROM information_schema.tables 
-WHERE table_schema = 'public' 
-  AND table_name IN ('usuarios', 'contactos', 'mensajes');
+WHERE table_schema = 'public'
+ORDER BY table_name;
 
--- Verificar la estructura de la tabla contactos (para confirmar que usuario_id existe)
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'contactos' 
-ORDER BY ordinal_position;
+-- Verificar triggers y funciones
+SELECT trigger_name, event_object_table
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+ORDER BY event_object_table;
