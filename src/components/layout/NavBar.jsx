@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+
 
 
 const NavBar = () => {
@@ -8,8 +10,16 @@ const NavBar = () => {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  const menuItems = ['Inicio', 'Productos', 'Servicios', 'Proyectos', 'Contacto'];
+  const menuItems = [
+    { label: 'Inicio', href: '/' },
+    { label: 'Productos', href: '/productos' },
+    { label: 'Servicios', href: '/servicios' },
+    { label: 'Proyectos', href: '/proyectos' },
+    { label: 'Contacto', href: '/contact' },
+  ];
+  
 
+  // Maneja el scroll: detecta si se esta haciendo scroll hacia abajo o arriba
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -55,8 +65,10 @@ const NavBar = () => {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-
+  
+  // Estructura del return (JSX)
   return (
+    // Navbar principal
     <nav 
       className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 bg-gradient-to-r from-amber-900/95 via-amber-800/95 to-amber-900/95 ${
         isHidden ? '-translate-y-full' : 'translate-y-0'
@@ -69,13 +81,13 @@ const NavBar = () => {
           : 'linear-gradient(to right, rgba(120, 53, 15, 0.9), rgba(146, 64, 14, 0.9), rgba(120, 53, 15, 0.9))',
         borderBottom: '1px solid rgba(255, 200, 150, 0.2)'
       }}
-    >
+    > 
       <div className="w-full px-2">
         <div className="flex justify-between items-center h-24">
           {/* Logo - Ajustado al borde izquierdo con espacio mínimo garantizado */}
           <div className="flex items-center ml-1 md:min-w-[200px] md:w-1/4 md:mr-4">
             <div className="flex-shrink-0 relative group">
-              <a href="#" className="flex items-center">
+              <a href="/" className="flex items-center">
                 <div className="relative">
                   {/* Sierra circular como ícono */}
                   <svg className="h-10 w-10 text-amber-300 transition-all duration-300 group-hover:text-amber-200 group-hover:scale-110" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -103,30 +115,30 @@ const NavBar = () => {
             </div>
           </div>
 
-          {/* Menú escritorio - Centrado con mejor distribución */}
+          {/* Menú escritorio (pantallas grandes)- Centrado con mejor distribución */}
           <div className="hidden md:flex md:justify-center md:flex-grow md:flex-shrink">
             <div className="flex items-center space-x-1 lg:space-x-2 flex-wrap justify-center">
-              {menuItems.map((item) => (
-                <a 
-                  key={item}
-                  href="#" 
+              {menuItems.map(({ label, href }) => (
+                <Link
+                  href={href}
+                  key={label}
+                  onClick={() => setActiveItem(label)}
                   className={`relative px-2 sm:px-3 md:px-4 py-2 rounded-md text-sm md:text-base font-medium uppercase tracking-wider transition-all duration-300 
-                    ${activeItem === item 
+                    ${activeItem === label 
                       ? 'text-amber-100 bg-amber-950/60 before:absolute before:bottom-0 before:left-1/2 before:-translate-x-1/2 before:w-1/2 before:h-0.5 before:bg-amber-300' 
                       : 'text-amber-200 hover:text-amber-100 hover:bg-amber-800/40'
                     }
                   `}
-                  onClick={() => setActiveItem(item)}
-                >
-                  <span className="relative z-10">{item}</span>
-                  {activeItem !== item && (
+                  >
+                  <span className="relative z-10">{label}</span>
+                  {activeItem !== label && (
                     <span className="absolute inset-0 rounded-md bg-gradient-to-b from-amber-700/30 to-amber-900/20 opacity-0 transform scale-90 transition-all duration-300 hover:opacity-100 hover:scale-100"></span>
                   )}
-                </a>
+                </Link>              
               ))}
             </div>
           </div>
-          {/* Botón menú móvil - Solo visible en móvil */}
+          {/* Botón menú móvil (pantallas pequeñas) - Solo visible en móvil */}
           <div className="flex items-center justify-end md:min-w-[100px] md:w-1/4">
             <div className="flex items-center mr-1 md:hidden">
               <button
@@ -150,25 +162,25 @@ const NavBar = () => {
       {/* Menú móvil */}
       <div className={`transition-all duration-500 ease-in-out max-h-0 overflow-hidden ${isMenuOpen ? 'max-h-96' : ''}`}>
         <div className="px-4 pt-2 pb-5 space-y-3 bg-gradient-to-b from-amber-800/95 to-amber-900/95 border-t border-amber-700/30">
-          {menuItems.map((item) => (
-            <a 
-              key={item}
-              href="#" 
+          {menuItems.map(({ label, href }) => (
+            <Link 
+              key={label} 
+              href={href}
               className={`block px-4 py-3 rounded-md text-base font-medium transition-all duration-300 relative overflow-hidden ${
-                activeItem === item 
+                activeItem === label 
                   ? 'text-amber-100 bg-amber-950/60 border-l-2 border-amber-400' 
                   : 'text-amber-200 hover:text-amber-100 hover:bg-amber-800/40'
               }`}
               onClick={() => {
-                setActiveItem(item);
+                setActiveItem(label);
                 setIsMenuOpen(false);
               }}
-            >
-              <span>{item}</span>
-              {activeItem === item && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></span>
-              )}
-            </a>
+              >
+              <span>{label}</span>
+                {activeItem === label && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></span>
+                )}
+            </Link>
           ))}
         </div>
       </div>
