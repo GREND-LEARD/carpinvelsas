@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FiTool, FiStar, FiUsers, FiShield, FiCoffee, FiAward, FiHeart, FiArrowRight, FiClock, FiTrendingUp, FiCheckCircle, FiMapPin } from 'react-icons/fi';
 import { useRef, useState, useEffect } from 'react';
+import NavBar from '@/components/layout/NavBar';
 
 export default function Home() {
   const router = useRouter();
@@ -129,37 +130,9 @@ export default function Home() {
 
   return (
     <div className="relative">
-      {/* Floating Navigation */}
-      <motion.nav 
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.5 }}
-        className="fixed top-6 right-6 z-50"
-        aria-label="Navegación rápida"
-      >
-        <div className="bg-amber-800/80 backdrop-blur-md p-3 rounded-full shadow-lg flex gap-4">
-          <Link href="/register">
-            <motion.div 
-              whileHover={{ scale: 1.1 }} 
-              whileTap={{ scale: 0.9 }} 
-              className="w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center"
-              aria-label="Registrarse"
-            >
-              <FiUsers className="text-amber-50" aria-hidden="true" />
-            </motion.div>
-          </Link>
-          <Link href="/login">
-            <motion.div 
-              whileHover={{ scale: 1.1 }} 
-              whileTap={{ scale: 0.9 }} 
-              className="w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center"
-              aria-label="Iniciar sesión"
-            >
-              <FiShield className="text-amber-50" aria-hidden="true" />
-            </motion.div>
-          </Link>
-        </div>
-      </motion.nav>
+      <NavBar />
+      {/* Eliminar o comentar la navegación flotante anterior */}
+      {/* <motion.nav ... /> */}
 
       <main>
         {/* Hero Section con Parallax Mejorado */}
