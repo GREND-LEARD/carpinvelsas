@@ -25,7 +25,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
                     if (user.rol === 'admin') {
                         router.push('/dashboard');
                     } else {
-                        router.push('/productos');
+                        router.push('/client-portal');
                     }
                 }
             }

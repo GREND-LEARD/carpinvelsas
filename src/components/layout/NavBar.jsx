@@ -13,6 +13,7 @@ const NavBar = () => {
   const menuItems = [
     { label: 'Inicio', href: '/' },
     { label: 'Productos', href: '/productos' },
+    { label: 'Presupuestos', href: '/presupuestos' },
     { label: 'Servicios', href: '/servicios' },
     { label: 'Proyectos', href: '/proyectos' },
     { label: 'Contacto', href: '/contact' },

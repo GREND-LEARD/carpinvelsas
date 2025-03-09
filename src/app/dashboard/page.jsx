@@ -1,34 +1,172 @@
 'use client';
+import { useState } from 'react';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import { useAuth } from '@/app/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FiBox, FiSettings, FiUsers, FiDollarSign, FiCalendar, FiLogOut, FiTool, FiStar, FiFileText, FiGrid } from 'react-icons/fi';
+import { FiBox, FiSettings, FiUsers, FiDollarSign, FiCalendar, FiLogOut, FiTool, FiStar, FiFileText, FiGrid, FiBarChart2, FiClipboard } from 'react-icons/fi';
 
-const stats = [
-    { id: 1, title: "Proyectos Activos", value: "12", icon: <FiTool className="w-6 h-6" />, color: "bg-amber-500" },
-    { id: 2, title: "Clientes Nuevos", value: "5", icon: <FiUsers className="w-6 h-6" />, color: "bg-emerald-500" },
-    { id: 3, title: "Ingresos Mensuales", value: "$25.4K", icon: <FiDollarSign className="w-6 h-6" />, color: "bg-blue-500" },
-    { id: 4, title: "Calificación", value: "4.9/5", icon: <FiStar className="w-6 h-6" />, color: "bg-purple-500" },
-];
+// Importamos los nuevos componentes
+import AnalyticsSection from '@/components/dashboard/AnalyticsSection';
+import InventoryManagement from '@/components/dashboard/InventoryManagement';
+import ProductionScheduler from '@/components/dashboard/ProductionScheduler';
 
-const projects = [
-    { id: 1, name: "Cocina Moderna", progress: 85, client: "Familia Rodríguez", deadline: "15 DIC" },
-    { id: 2, name: "Biblioteca Clásica", progress: 60, client: "Dr. Martínez", deadline: "22 ENE" },
-    { id: 3, name: "Mueble de Jardín", progress: 45, client: "Hotel Paraíso", deadline: "10 FEB" },
-];
-
-const notifications = [
-    { id: 1, text: "Nuevo pedido de diseño personalizado", time: "2h ago", unread: true },
-    { id: 2, text: "Aprobación de presupuesto pendiente", time: "5h ago", unread: false },
-    { id: 3, text: "Recordatorio: Entrega proyecto #123", time: "1d ago", unread: true },
-];
+// Definimos las posibles secciones del dashboard
+const SECTIONS = {
+  OVERVIEW: 'overview',
+  ANALYTICS: 'analytics',
+  INVENTORY: 'inventory',
+  PRODUCTION: 'production',
+};
 
 function Dashboard() {
     const { user, logout } = useAuth();
+    const [activeSection, setActiveSection] = useState(SECTIONS.OVERVIEW);
 
     const getInitials = () => {
         if (!user?.nombre) return '?';
         return user.nombre.split(' ').map(n => n[0]).join('').toUpperCase();
+    };
+
+    // Datos estáticos para la sección de resumen
+    const stats = [
+        { id: 1, title: "Proyectos Activos", value: "12", icon: <FiTool className="w-6 h-6" />, color: "bg-amber-500" },
+        { id: 2, title: "Clientes Nuevos", value: "5", icon: <FiUsers className="w-6 h-6" />, color: "bg-emerald-500" },
+        { id: 3, title: "Ingresos Mensuales", value: "$25.4K", icon: <FiDollarSign className="w-6 h-6" />, color: "bg-blue-500" },
+        { id: 4, title: "Calificación", value: "4.9/5", icon: <FiStar className="w-6 h-6" />, color: "bg-purple-500" },
+    ];
+
+    const projects = [
+        { id: 1, name: "Cocina Moderna", progress: 85, client: "Familia Rodríguez", deadline: "15 DIC" },
+        { id: 2, name: "Biblioteca Clásica", progress: 60, client: "Dr. Martínez", deadline: "22 ENE" },
+        { id: 3, name: "Mueble de Jardín", progress: 45, client: "Hotel Paraíso", deadline: "10 FEB" },
+    ];
+
+    const notifications = [
+        { id: 1, text: "Nuevo pedido de diseño personalizado", time: "2h ago", unread: true },
+        { id: 2, text: "Aprobación de presupuesto pendiente", time: "5h ago", unread: false },
+        { id: 3, text: "Recordatorio: Entrega proyecto #123", time: "1d ago", unread: true },
+    ];
+
+    // Definimos las opciones del menú
+    const menuItems = [
+        { icon: <FiGrid />, text: "Resumen", value: SECTIONS.OVERVIEW, count: null },
+        { icon: <FiBarChart2 />, text: "Analíticas", value: SECTIONS.ANALYTICS, count: null },
+        { icon: <FiBox />, text: "Inventario", value: SECTIONS.INVENTORY, count: 7 },
+        { icon: <FiClipboard />, text: "Producción", value: SECTIONS.PRODUCTION, count: 5 },
+        { icon: <FiTool />, text: "Proyectos", count: 12 },
+        { icon: <FiUsers />, text: "Clientes", count: 23 },
+        { icon: <FiFileText />, text: "Presupuestos", count: 8 },
+        { icon: <FiCalendar />, text: "Calendario" },
+        { icon: <FiSettings />, text: "Configuración" },
+    ];
+
+    // Renderiza la sección activa
+    const renderActiveSection = () => {
+        switch (activeSection) {
+            case SECTIONS.ANALYTICS:
+                return <AnalyticsSection />;
+            case SECTIONS.INVENTORY:
+                return <InventoryManagement />;
+            case SECTIONS.PRODUCTION:
+                return <ProductionScheduler />;
+            case SECTIONS.OVERVIEW:
+            default:
+                return (
+                    <>
+                        {/* Tarjetas de métricas con animación escalonada */}
+                        <div className="grid grid-cols-4 gap-6 mb-12">
+                            {stats.map((stat, i) => (
+                                <motion.div
+                                    key={stat.id}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl"
+                                >
+                                    <div className={`${stat.color} w-14 h-14 rounded-xl flex items-center justify-center text-white mb-4`}>
+                                        {stat.icon}
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-amber-900 mb-2">{stat.value}</h3>
+                                    <p className="text-sm text-amber-600">{stat.title}</p>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Sección de proyectos con barras de progreso animadas */}
+                        <div className="grid grid-cols-2 gap-8">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl"
+                            >
+                                <h2 className="text-2xl font-bold text-amber-900 mb-6">Proyectos Activos</h2>
+                                <div className="space-y-6">
+                                    {projects.map((project) => (
+                                        <motion.div
+                                            key={project.id}
+                                            whileHover={{ scale: 1.02 }}
+                                            className="bg-white p-6 rounded-xl shadow-lg"
+                                        >
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div>
+                                                    <h3 className="font-bold text-amber-900">{project.name}</h3>
+                                                    <p className="text-sm text-amber-600">{project.client}</p>
+                                                </div>
+                                                <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm">
+                                                    {project.deadline}
+                                                </span>
+                                            </div>
+                                            <div className="relative pt-2">
+                                                <div className="flex mb-2 items-center justify-between">
+                                                    <div>
+                                                        <span className="text-xs font-semibold inline-block text-amber-700">
+                                                            Progreso
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-xs font-semibold inline-block text-amber-700">
+                                                            {project.progress}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-hidden h-2 bg-amber-100 rounded-full">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${project.progress}%` }}
+                                                        transition={{ duration: 1 }}
+                                                        className="h-full bg-amber-500 rounded-full"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            {/* Notificaciones con efecto de aparición */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl"
+                            >
+                                <h2 className="text-2xl font-bold text-amber-900 mb-6">Notificaciones</h2>
+                                <div className="space-y-4">
+                                    {notifications.map((notification) => (
+                                        <motion.div
+                                            key={notification.id}
+                                            whileHover={{ x: 5 }}
+                                            className={`p-4 rounded-xl ${notification.unread ? 'bg-amber-100 border-l-4 border-amber-500' : 'bg-white'}`}
+                                        >
+                                            <p className="text-amber-900">{notification.text}</p>
+                                            <p className="text-sm text-amber-500 mt-2">{notification.time}</p>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </div>
+                    </>
+                );
+        }
     };
 
     return (
@@ -39,7 +177,7 @@ function Dashboard() {
                     initial={{ x: -300 }}
                     animate={{ x: 0 }}
                     transition={{ type: 'spring', stiffness: 120 }}
-                    className="fixed h-screen w-80 bg-amber-50/95 backdrop-blur-lg shadow-2xl p-8 border-r border-amber-100"
+                    className="fixed h-screen w-80 bg-amber-50/95 backdrop-blur-lg shadow-2xl p-8 border-r border-amber-100 overflow-y-auto z-10"
                 >
                     <div className="flex flex-col h-full">
                         {/* Perfil con animación de aparición */}
@@ -63,22 +201,24 @@ function Dashboard() {
 
                         {/* Menú interactivo */}
                         <div className="space-y-4 flex-1">
-                            {[
-                                { icon: <FiGrid />, text: "Panel", count: 4 },
-                                { icon: <FiTool />, text: "Proyectos", count: 12 },
-                                { icon: <FiUsers />, text: "Clientes", count: 23 },
-                                { icon: <FiFileText />, text: "Presupuestos", count: 8 },
-                                { icon: <FiCalendar />, text: "Calendario" },
-                                { icon: <FiSettings />, text: "Configuración" },
-                            ].map((item, i) => (
+                            {menuItems.map((item, i) => (
                                 <motion.div
                                     key={i}
                                     whileHover={{ x: 10 }}
-                                    className="flex items-center justify-between p-3 rounded-xl group hover:bg-amber-100 transition-colors cursor-pointer"
+                                    className={`flex items-center justify-between p-3 rounded-xl group transition-colors cursor-pointer ${
+                                        activeSection === item.value ? 'bg-amber-200' : 'hover:bg-amber-100'
+                                    }`}
+                                    onClick={() => item.value && setActiveSection(item.value)}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span className="text-amber-700 text-xl">{item.icon}</span>
-                                        <span className="text-amber-900">{item.text}</span>
+                                        <span className={`text-xl ${
+                                            activeSection === item.value ? 'text-amber-900' : 'text-amber-700'
+                                        }`}>
+                                            {item.icon}
+                                        </span>
+                                        <span className={activeSection === item.value ? 'text-amber-900 font-medium' : 'text-amber-900'}>
+                                            {item.text}
+                                        </span>
                                     </div>
                                     {item.count && (
                                         <span className="bg-amber-700 text-amber-50 px-2 rounded-full text-sm">
@@ -111,102 +251,16 @@ function Dashboard() {
                         className="mb-12"
                     >
                         <h1 className="text-4xl font-bold text-amber-50 mb-2 font-serif">
-                            Bienvenido al Taller Digital
+                            {activeSection === SECTIONS.OVERVIEW && 'Bienvenido al Taller Digital'}
+                            {activeSection === SECTIONS.ANALYTICS && 'Analítica del Negocio'}
+                            {activeSection === SECTIONS.INVENTORY && 'Control de Inventario'}
+                            {activeSection === SECTIONS.PRODUCTION && 'Planificación de Producción'}
                         </h1>
                         <p className="text-amber-200">Último acceso: Hoy a las {new Date().toLocaleTimeString()}</p>
                     </motion.div>
 
-                    {/* Tarjetas de métricas con animación escalonada */}
-                    <div className="grid grid-cols-4 gap-6 mb-12">
-                        {stats.map((stat, i) => (
-                            <motion.div
-                                key={stat.id}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl"
-                            >
-                                <div className={`${stat.color} w-14 h-14 rounded-xl flex items-center justify-center text-white mb-4`}>
-                                    {stat.icon}
-                                </div>
-                                <h3 className="text-3xl font-bold text-amber-900 mb-2">{stat.value}</h3>
-                                <p className="text-sm text-amber-600">{stat.title}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Sección de proyectos con barras de progreso animadas */}
-                    <div className="grid grid-cols-2 gap-8">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl"
-                        >
-                            <h2 className="text-2xl font-bold text-amber-900 mb-6">Proyectos Activos</h2>
-                            <div className="space-y-6">
-                                {projects.map((project) => (
-                                    <motion.div
-                                        key={project.id}
-                                        whileHover={{ scale: 1.02 }}
-                                        className="bg-white p-6 rounded-xl shadow-lg"
-                                    >
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div>
-                                                <h3 className="font-bold text-amber-900">{project.name}</h3>
-                                                <p className="text-sm text-amber-600">{project.client}</p>
-                                            </div>
-                                            <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm">
-                                                {project.deadline}
-                                            </span>
-                                        </div>
-                                        <div className="relative pt-2">
-                                            <div className="flex mb-2 items-center justify-between">
-                                                <div>
-                                                    <span className="text-xs font-semibold inline-block text-amber-700">
-                                                        Progreso
-                                                    </span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-xs font-semibold inline-block text-amber-700">
-                                                        {project.progress}%
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="overflow-hidden h-2 bg-amber-100 rounded-full">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${project.progress}%` }}
-                                                    transition={{ duration: 1 }}
-                                                    className="h-full bg-amber-500 rounded-full"
-                                                />
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Notificaciones con efecto de aparición */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 50 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="bg-amber-50/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl"
-                        >
-                            <h2 className="text-2xl font-bold text-amber-900 mb-6">Notificaciones</h2>
-                            <div className="space-y-4">
-                                {notifications.map((notification) => (
-                                    <motion.div
-                                        key={notification.id}
-                                        whileHover={{ x: 5 }}
-                                        className={`p-4 rounded-xl ${notification.unread ? 'bg-amber-100 border-l-4 border-amber-500' : 'bg-white'}`}
-                                    >
-                                        <p className="text-amber-900">{notification.text}</p>
-                                        <p className="text-sm text-amber-500 mt-2">{notification.time}</p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
+                    {/* Renderiza la sección activa */}
+                    {renderActiveSection()}
                 </div>
             </div>
         </div>
