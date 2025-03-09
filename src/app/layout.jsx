@@ -1,9 +1,5 @@
-import { Inter } from "next/font/google";
 import "../app/styles/globals.css";
-import { AuthProvider } from "@/app/context/AuthContext"; // ✅ AuthProvider importado correctamente
-
-// Configuración de la fuente Inter
-const inter = Inter({ subsets: ["latin"] });
+import { AuthProvider } from "@/app/context/AuthContext";
 
 // Definición de metadata
 export const metadata = {
@@ -36,7 +32,7 @@ export default function RootLayout({ children }) {
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                 <link rel="manifest" href="/site.webmanifest" />
             </head>
-            <body className={`${inter.className} bg-amber-50`}>
+            <body className="bg-amber-50">
                 {/* Proveedor de autenticación */}
                 <AuthProvider>
                     {children}
