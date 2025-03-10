@@ -6,3 +6,5 @@ npm install react-icons
 npm install framer-motion
 npm install @fullcalendar/react @fullcalendar/daygrid @fullcalendar/timegrid @fullcalendar/interaction framer-motion date-fns
 npm install jsonwebtoken jose
+npm install three
+npm install @react-three/fiber @react-three/drei
