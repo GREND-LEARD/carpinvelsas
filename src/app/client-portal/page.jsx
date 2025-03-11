@@ -172,10 +172,10 @@ function ClientPortal() {
             {/* Encabezado y acciones rápidas */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-4xl font-bold text-amber-50 mb-2">
+                    <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
                         ¡Bienvenido, {user?.nombre || 'Cliente'}!
                     </h1>
-                    <p className="text-amber-200">
+                    <p className="text-white text-opacity-90">
                         Gestiona tus proyectos y solicita presupuestos desde tu portal personal
                     </p>
                 </div>

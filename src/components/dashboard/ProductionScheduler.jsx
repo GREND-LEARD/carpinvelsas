@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiClock, FiTool, FiUser, FiAlertTriangle, FiArrowRight, FiCheck, FiPlus } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiTool, FiUser, FiAlertTriangle, FiArrowRight, FiCheck, FiPlus, FiX, FiEdit } from 'react-icons/fi';
 
 // Datos de ejemplo para proyectos
 const initialProjects = [
@@ -105,12 +105,142 @@ const calcularCargaTrabajo = (artesano, projects) => {
   };
 };
 
+// Definir posibles estados del proyecto
+const ESTADOS_PROYECTO = [
+  { id: 'pendiente', nombre: 'Pendiente', color: 'bg-gray-100 text-gray-800' },
+  { id: 'aprobado', nombre: 'Aprobado', color: 'bg-blue-100 text-blue-800' },
+  { id: 'en_progreso', nombre: 'En Progreso', color: 'bg-amber-100 text-amber-800' },
+  { id: 'pausado', nombre: 'Pausado', color: 'bg-orange-100 text-orange-800' },
+  { id: 'completado', nombre: 'Completado', color: 'bg-green-100 text-green-800' },
+  { id: 'rechazado', nombre: 'Rechazado', color: 'bg-red-100 text-red-800' }
+];
+
 // Componente principal
 const ProductionScheduler = () => {
   const [projects, setProjects] = useState(initialProjects);
   const [selectedStatus, setSelectedStatus] = useState('todos');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [estadoProyecto, setEstadoProyecto] = useState('');
+  const [actualizando, setActualizando] = useState(false);
+  const [mensajeActualizacion, setMensajeActualizacion] = useState({ texto: '', tipo: '' });
+  
+  // Cargar las solicitudes de proyecto reales
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/admin/proyectos', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al cargar proyectos');
+        }
+        
+        // Transformar los datos al formato esperado por el componente
+        const formattedProjects = data.proyectos.map(p => ({
+          id: p.id,
+          nombre: p.titulo,
+          cliente: p.cliente ? `${p.cliente.nombre} ${p.cliente.apellidos}` : 'Cliente sin nombre',
+          fechaInicio: p.fecha_solicitud,
+          fechaFin: p.fecha_entrega || p.fecha_deseada,
+          estado: p.estado === 'pendiente' ? 'no_iniciado' : 
+                  p.estado === 'en_progreso' ? 'en_proceso' : p.estado,
+          prioridad: p.prioridad || 'normal',
+          completado: p.estado === 'completado' ? 100 : 
+                     p.estado === 'en_progreso' ? 50 : 
+                     p.estado === 'pendiente' ? 0 : 25,
+          artesanos: ['Pendiente de asignar'], // Por ahora no tenemos esta información
+          complejidad: 'media', // Valor por defecto
+          materiales: p.materiales_preferidos || ['No especificado'],
+          descripcion: p.descripcion,
+          tipo_proyecto: p.tipo_proyecto,
+          riesgo: 'bajo'
+        }));
+        
+        setProjects(formattedProjects.length > 0 ? formattedProjects : initialProjects);
+        
+      } catch (error) {
+        console.error('Error al cargar proyectos:', error);
+        setError(error.message || 'Error al cargar proyectos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
+  
+  // Actualizar estado del proyecto
+  const actualizarEstadoProyecto = async () => {
+    if (!currentProject || !estadoProyecto || estadoProyecto === currentProject.estado) return;
+    
+    setActualizando(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/actualizar-proyecto', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: currentProject.id,
+          estado: estadoProyecto,
+          notificarCliente: true
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al actualizar el proyecto');
+      }
+      
+      // Actualizar el proyecto en la lista
+      setProjects(prev => prev.map(p => 
+        p.id === currentProject.id 
+          ? { 
+              ...p, 
+              estado: estadoProyecto === 'pendiente' ? 'no_iniciado' : 
+                    estadoProyecto === 'en_proceso' ? 'en_proceso' : estadoProyecto,
+              completado: estadoProyecto === 'completado' ? 100 : 
+                        estadoProyecto === 'en_proceso' ? 50 : 
+                        estadoProyecto === 'pendiente' ? 0 : 25
+            } 
+          : p
+      ));
+      
+      setMensajeActualizacion({
+        texto: 'Estado actualizado correctamente',
+        tipo: 'success'
+      });
+      
+      setTimeout(() => {
+        setMensajeActualizacion({ texto: '', tipo: '' });
+        setIsDetailsModalOpen(false);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      setMensajeActualizacion({
+        texto: error.message || 'Error al actualizar el estado',
+        tipo: 'error'
+      });
+    } finally {
+      setActualizando(false);
+    }
+  };
   
   // Filtrar proyectos por estado
   const filteredProjects = selectedStatus === 'todos' 
@@ -129,6 +259,8 @@ const ProductionScheduler = () => {
   // Función para mostrar detalles del proyecto
   const showProjectDetails = (project) => {
     setCurrentProject(project);
+    setEstadoProyecto(project.estado === 'no_iniciado' ? 'pendiente' : 
+                     project.estado === 'en_proceso' ? 'en_progreso' : project.estado);
     setIsDetailsModalOpen(true);
   };
 
@@ -146,14 +278,41 @@ const ProductionScheduler = () => {
     >
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-amber-900">Planificación de Producción</h2>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-amber-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
-        >
-          <FiPlus /> Nuevo Proyecto
-        </motion.button>
+        <a href="/client-portal/proyectos">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md"
+          >
+            <FiPlus /> Nuevo Proyecto
+          </motion.button>
+        </a>
       </div>
+
+      {/* Mensajes de error o cargando */}
+      {isLoading && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-3"></div>
+            <p className="text-blue-700">Cargando proyectos...</p>
+          </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+          <div className="flex items-center gap-3">
+            <FiAlertTriangle className="text-red-500 text-xl" />
+            <div>
+              <p className="text-red-800 font-bold">Error al cargar proyectos</p>
+              <p className="text-red-700">{error}</p>
+              <p className="text-sm text-red-600 mt-2">
+                Asegúrate de que la tabla solicitudes_proyectos existe en tu base de datos.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Alerta de sobrecarga */}
       {artesanosSobrecargados.length > 0 && (
@@ -194,131 +353,151 @@ const ProductionScheduler = () => {
         ))}
       </div>
 
+      {/* Mensaje de no hay proyectos */}
+      {filteredProjects.length === 0 && !isLoading && (
+        <div className="bg-white rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiTool className="text-amber-600 w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-amber-900 mb-2">No hay proyectos {selectedStatus !== 'todos' ? `en estado "${selectedStatus}"` : ''}</h3>
+          <p className="text-amber-700 mb-4">
+            {selectedStatus === 'todos' 
+              ? 'Aún no se ha registrado ningún proyecto en el sistema.' 
+              : `No hay proyectos que se encuentren actualmente en estado "${selectedStatus}".`}
+          </p>
+          <a href="/client-portal/proyectos">
+            <button className="bg-amber-600 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2">
+              <FiPlus /> Crear Nuevo Proyecto
+            </button>
+          </a>
+        </div>
+      )}
+
       {/* Proyectos */}
-      <div className="space-y-4">
-        {filteredProjects.map((project, index) => (
-          <motion.div
-            key={project.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="bg-white rounded-xl p-6 shadow-md"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-bold text-amber-900">{project.nombre}</h3>
-                <p className="text-amber-700">{project.cliente}</p>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm ${
-                project.prioridad === 'alta' ? 'bg-red-100 text-red-700' :
-                project.prioridad === 'media' ? 'bg-amber-100 text-amber-700' :
-                'bg-green-100 text-green-700'
-              }`}>
-                {project.prioridad === 'alta' ? 'Prioridad Alta' :
-                 project.prioridad === 'media' ? 'Prioridad Media' :
-                 'Prioridad Baja'}
-              </div>
-            </div>
-            
-            <div className="mt-4 grid grid-cols-4 gap-4">
-              <div className="flex items-center gap-2">
-                <FiCalendar className="text-amber-500" />
+      {!isLoading && filteredProjects.length > 0 && (
+        <div className="space-y-4">
+          {filteredProjects.map((project, index) => (
+            <motion.div
+              key={project.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="bg-white rounded-xl p-6 shadow-md"
+            >
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-xs text-amber-500">Fecha de entrega</p>
-                  <p className="text-sm font-medium text-amber-800">
-                    {new Date(project.fechaFin).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </p>
+                  <h3 className="text-xl font-bold text-amber-900">{project.nombre}</h3>
+                  <p className="text-amber-700">{project.cliente}</p>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-sm ${
+                  project.prioridad === 'alta' ? 'bg-red-100 text-red-700' :
+                  project.prioridad === 'media' ? 'bg-amber-100 text-amber-700' :
+                  project.prioridad === 'baja' ? 'bg-green-100 text-green-700' : 
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {project.prioridad === 'alta' ? 'Prioridad Alta' :
+                   project.prioridad === 'media' ? 'Prioridad Media' :
+                   project.prioridad === 'baja' ? 'Prioridad Baja' : 
+                   'Prioridad Normal'}
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <FiTool className="text-amber-500" />
-                <div>
-                  <p className="text-xs text-amber-500">Complejidad</p>
-                  <p className="text-sm font-medium text-amber-800">
-                    {project.complejidad.charAt(0).toUpperCase() + project.complejidad.slice(1)}
-                  </p>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="flex items-center gap-2">
+                  <FiCalendar className="text-amber-500" />
+                  <div>
+                    <p className="text-xs text-amber-500">Fecha deseada</p>
+                    <p className="text-sm font-medium text-amber-800">
+                      {project.fechaFin ? new Date(project.fechaFin).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'No especificada'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <FiUser className="text-amber-500" />
-                <div>
-                  <p className="text-xs text-amber-500">Artesanos</p>
-                  <p className="text-sm font-medium text-amber-800">
-                    {project.artesanos.length} asignados
-                  </p>
+                
+                <div className="flex items-center gap-2">
+                  <FiTool className="text-amber-500" />
+                  <div>
+                    <p className="text-xs text-amber-500">Tipo de proyecto</p>
+                    <p className="text-sm font-medium text-amber-800 capitalize">
+                      {project.tipo_proyecto || 'Personalizado'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <FiClock className="text-amber-500" />
-                <div>
-                  <p className="text-xs text-amber-500">Estado</p>
-                  <p className="text-sm font-medium text-amber-800">
-                    {project.estado === 'en_proceso' ? 'En proceso' :
-                     project.estado === 'no_iniciado' ? 'No iniciado' :
-                     project.estado === 'pausado' ? 'Pausado' : 'Completado'}
-                  </p>
+                
+                <div className="flex items-center gap-2">
+                  <FiUser className="text-amber-500" />
+                  <div>
+                    <p className="text-xs text-amber-500">Artesanos</p>
+                    <p className="text-sm font-medium text-amber-800">
+                      {project.artesanos && project.artesanos.length > 0 
+                        ? project.artesanos.slice(0, 2).join(', ') + (project.artesanos.length > 2 ? '...' : '')
+                        : 'Sin asignar'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Barra de progreso */}
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-amber-700 mb-1">
-                <span>Progreso: {project.completado}%</span>
-                <span>
-                  {project.estado === 'en_proceso' ? 'En fabricación' :
-                   project.estado === 'no_iniciado' ? 'Pendiente de inicio' :
-                   project.estado === 'pausado' ? 'Trabajo pausado' : 'Finalizado'}
-                </span>
-              </div>
-              <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${project.completado}%` }}
-                  transition={{ duration: 1 }}
-                  className={`h-full rounded-full ${
-                    project.completado < 20 ? 'bg-red-500' :
-                    project.completado < 60 ? 'bg-amber-500' :
-                    'bg-green-500'
-                  }`}
-                />
-              </div>
-            </div>
-            
-            {/* Materiales y botón de detalles */}
-            <div className="mt-4 flex justify-between items-center">
-              <div className="flex flex-wrap gap-2">
-                {project.materiales.slice(0, 2).map((material, i) => (
-                  <span key={i} className="bg-amber-50 text-amber-700 px-2 py-1 rounded-md text-xs">
-                    {material}
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500">
+                    <FiClock />
                   </span>
-                ))}
-                {project.materiales.length > 2 && (
-                  <span className="bg-amber-50 text-amber-700 px-2 py-1 rounded-md text-xs">
-                    +{project.materiales.length - 2} más
-                  </span>
-                )}
+                  <div>
+                    <p className="text-xs text-amber-500">Estado</p>
+                    <p className="text-sm font-medium text-amber-800 capitalize">
+                      {project.estado === 'no_iniciado' ? 'No iniciado' :
+                       project.estado === 'en_proceso' ? 'En proceso' :
+                       project.estado === 'pausado' ? 'Pausado' :
+                       project.estado === 'completado' ? 'Completado' : project.estado}
+                    </p>
+                  </div>
+                </div>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => showProjectDetails(project)}
-                className="text-amber-600 hover:text-amber-800 flex items-center gap-1 text-sm"
-              >
-                Ver detalles <FiArrowRight />
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-amber-900">Progreso</span>
+                  <span className="text-sm text-amber-600">{project.completado}%</span>
+                </div>
+                <div className="h-2 bg-amber-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${project.completado}%` }}
+                    transition={{ duration: 1 }}
+                    className={`h-full rounded-full ${
+                      project.completado < 30 ? 'bg-amber-300' :
+                      project.completado < 70 ? 'bg-amber-500' :
+                      'bg-amber-600'
+                    }`}
+                  />
+                </div>
+              </div>
+              
+              {project.materiales && project.materiales.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {project.materiales.map((material, i) => (
+                    <span key={i} className="bg-amber-50 text-amber-700 px-2 py-1 rounded-full text-xs">
+                      {material}
+                    </span>
+                  ))}
+                </div>
+              )}
+              
+              <div className="mt-4 flex justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => showProjectDetails(project)}
+                  className="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-sm flex items-center gap-1 hover:bg-amber-200"
+                >
+                  Ver detalles <FiArrowRight />
+                </motion.button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
       
       {/* Sección de Artesanos */}
       <div className="mt-8">
@@ -373,88 +552,164 @@ const ProductionScheduler = () => {
         </div>
       </div>
 
-      {/* Modal de detalles (simplificado) */}
+      {/* Modal de detalles */}
       {isDetailsModalOpen && currentProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-8 w-3/4 max-w-4xl max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-2xl font-bold text-amber-900">{currentProject.nombre}</h3>
+            {/* Cabecera del modal */}
+            <div className="bg-amber-500 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">Detalles del Proyecto</h3>
               <button 
                 onClick={() => setIsDetailsModalOpen(false)}
-                className="text-amber-500 hover:text-amber-700"
+                className="text-white hover:text-amber-100"
               >
-                &times;
+                <FiX className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div>
-                <h4 className="font-bold text-amber-800 mb-2">Detalles del Cliente</h4>
-                <p className="text-amber-700 mb-1"><span className="font-medium">Cliente:</span> {currentProject.cliente}</p>
-                <p className="text-amber-700 mb-1"><span className="font-medium">Proyecto:</span> {currentProject.descripcion}</p>
-                <p className="text-amber-700 mb-1">
-                  <span className="font-medium">Estado:</span> 
-                  {currentProject.estado === 'en_proceso' ? 'En proceso' :
-                  currentProject.estado === 'no_iniciado' ? 'No iniciado' :
-                  currentProject.estado === 'pausado' ? 'Pausado' : 'Completado'}
-                </p>
+            {/* Contenido del modal */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Columna 1: Información básica */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-amber-900 mb-1">{currentProject.nombre}</h2>
+                    <p className="text-amber-700 text-lg">{currentProject.cliente}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-600 mb-1">Tipo de Proyecto</h4>
+                      <p className="text-amber-900 capitalize">{currentProject.tipo_proyecto || 'Personalizado'}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-600 mb-1">Estado Actual</h4>
+                      <p className="text-amber-900 capitalize">{
+                        currentProject.estado === 'no_iniciado' ? 'Pendiente' :
+                        currentProject.estado === 'en_proceso' ? 'En progreso' :
+                        currentProject.estado
+                      }</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-600 mb-1">Fecha de Solicitud</h4>
+                      <p className="text-amber-900">{currentProject.fechaInicio ? new Date(currentProject.fechaInicio).toLocaleDateString('es-ES') : 'No disponible'}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-600 mb-1">Fecha Deseada de Entrega</h4>
+                      <p className="text-amber-900">{currentProject.fechaFin ? new Date(currentProject.fechaFin).toLocaleDateString('es-ES') : 'No especificada'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-amber-600 mb-1">Descripción</h4>
+                    <div className="bg-amber-50 p-4 rounded-lg">
+                      <p className="text-amber-900 whitespace-pre-line">{currentProject.descripcion}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-amber-600 mb-1">Materiales Preferidos</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {currentProject.materiales && currentProject.materiales.length > 0 ? (
+                        currentProject.materiales.map((material, i) => (
+                          <span key={i} className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
+                            {material}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-amber-700">No se han especificado materiales</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Columna 2: Gestión y estado */}
+                <div className="space-y-6">
+                  <div className="bg-amber-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-amber-900 mb-3">Gestión del Proyecto</h4>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-amber-700 mb-1">
+                          Cambiar Estado
+                        </label>
+                        <select
+                          value={estadoProyecto || (
+                            currentProject.estado === 'no_iniciado' ? 'pendiente' : 
+                            currentProject.estado === 'en_proceso' ? 'en_progreso' : 
+                            currentProject.estado
+                          )}
+                          onChange={(e) => setEstadoProyecto(e.target.value)}
+                          className="w-full p-2 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        >
+                          {ESTADOS_PROYECTO.map(estado => (
+                            <option key={estado.id} value={estado.id}>
+                              {estado.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {mensajeActualizacion.texto && (
+                        <div className={`p-3 rounded-lg ${
+                          mensajeActualizacion.tipo === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {mensajeActualizacion.texto}
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-end">
+                        <button
+                          onClick={actualizarEstadoProyecto}
+                          disabled={actualizando || !estadoProyecto || estadoProyecto === currentProject.estado}
+                          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                            actualizando || !estadoProyecto || estadoProyecto === currentProject.estado
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-amber-600 text-white hover:bg-amber-700'
+                          }`}
+                        >
+                          {actualizando ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                              Actualizando...
+                            </>
+                          ) : (
+                            <>
+                              <FiCheck /> Actualizar Estado
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-amber-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-amber-900 mb-3">Información del Cliente</h4>
+                    <div className="space-y-2">
+                      <p className="text-amber-900">
+                        <strong className="text-amber-700">Cliente:</strong> {currentProject.cliente}
+                      </p>
+                      {/* Puedes añadir más información de contacto si está disponible */}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                    <a 
+                      href={`/admin/proyectos/editar/${currentProject.id}`}
+                      className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 inline-flex items-center gap-2"
+                    >
+                      <FiEdit /> Editar Proyecto Completo
+                    </a>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <h4 className="font-bold text-amber-800 mb-2">Fechas Importantes</h4>
-                <p className="text-amber-700 mb-1">
-                  <span className="font-medium">Inicio:</span> 
-                  {new Date(currentProject.fechaInicio).toLocaleDateString('es-ES')}
-                </p>
-                <p className="text-amber-700 mb-1">
-                  <span className="font-medium">Entrega prevista:</span> 
-                  {new Date(currentProject.fechaFin).toLocaleDateString('es-ES')}
-                </p>
-                <p className="text-amber-700 mb-1">
-                  <span className="font-medium">Duración:</span> 
-                  {Math.ceil((new Date(currentProject.fechaFin) - new Date(currentProject.fechaInicio)) / (1000 * 60 * 60 * 24))} días
-                </p>
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <h4 className="font-bold text-amber-800 mb-2">Materiales Necesarios</h4>
-              <div className="flex flex-wrap gap-2">
-                {currentProject.materiales.map((material, i) => (
-                  <span key={i} className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-sm">
-                    {material}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <h4 className="font-bold text-amber-800 mb-2">Equipo Asignado</h4>
-              <div className="flex flex-wrap gap-2">
-                {currentProject.artesanos.map((artesano, i) => (
-                  <span key={i} className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-sm flex items-center">
-                    <FiUser className="mr-1" /> {artesano}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-3 mt-8">
-              <button 
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="px-4 py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50"
-              >
-                Cerrar
-              </button>
-              <button 
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2"
-              >
-                <FiCheck /> Actualizar Estado
-              </button>
             </div>
           </motion.div>
         </div>

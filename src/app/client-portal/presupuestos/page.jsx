@@ -23,14 +23,14 @@ function ClientPresupuestos() {
             className="mb-8"
           >
             <div className="flex items-center mb-4">
-              <Link href="/client-portal" className="flex items-center text-amber-200 hover:text-amber-100 mr-4">
+              <Link href="/client-portal" className="flex items-center text-white hover:text-amber-100 mr-4 bg-amber-800/50 px-3 py-1 rounded-lg">
                 <FiArrowLeft className="mr-2" /> Volver al Portal
               </Link>
             </div>
-            <h1 className="text-4xl font-bold text-amber-50 mb-2">
+            <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
               Calculadora de Presupuestos
             </h1>
-            <p className="text-amber-200">
+            <p className="text-white text-opacity-90">
               Configure su producto de carpintería ideal y obtenga un presupuesto personalizado
             </p>
           </motion.div>
@@ -42,36 +42,30 @@ function ClientPresupuestos() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="bg-amber-50/90 backdrop-blur-sm rounded-xl p-6 shadow-xl mb-8"
           >
-            <div className="flex items-start">
-              <div className="bg-amber-500 text-white p-3 rounded-lg mr-4">
-                <FiClipboard className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-amber-900 mb-2">Cómo utilizar esta herramienta</h2>
-                <p className="text-amber-700">
-                  Esta calculadora le permite configurar su producto de carpintería ideal y obtener un presupuesto personalizado al instante.
-                  Seleccione el tipo de producto, materiales, acabados y dimensiones para ver el precio estimado.
-                  Podrá descargar o imprimir su presupuesto al finalizar.
+            <h2 className="text-xl font-bold text-amber-900 mb-4 flex items-center">
+              <FiClipboard className="mr-2" /> Presupuesto Instantáneo
+            </h2>
+            <p className="text-amber-900">
+              Con nuestra herramienta de presupuesto puedes configurar tu proyecto y obtener un precio estimado instantáneo.
+              Personaliza cada detalle y visualiza cómo afecta al precio final.
+            </p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border border-amber-200">
+                <h3 className="font-medium text-amber-900 mb-2">Personaliza tu proyecto</h3>
+                <p className="text-amber-800 text-sm">
+                  Elige material, acabado, dimensiones y características adicionales para tu mueble a medida.
                 </p>
-                <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">1</div>
-                    <p className="text-amber-800 font-medium">Seleccione el producto</p>
-                  </div>
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">2</div>
-                    <p className="text-amber-800 font-medium">Configure detalles</p>
-                  </div>
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">3</div>
-                    <p className="text-amber-800 font-medium">Obtenga su presupuesto</p>
-                  </div>
-                </div>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-amber-200">
+                <h3 className="font-medium text-amber-900 mb-2">Recibe tu presupuesto</h3>
+                <p className="text-amber-800 text-sm">
+                  Obtén un precio estimado al instante y solicita un presupuesto formal si estás interesado.
+                </p>
               </div>
             </div>
           </motion.div>
           
-          {/* Calculadora de Presupuestos */}
+          {/* Calculadora */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
