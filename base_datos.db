@@ -447,3 +447,124 @@ SELECT trigger_name, event_object_table
 FROM information_schema.triggers
 WHERE trigger_schema = 'public'
 ORDER BY event_object_table;
+
+
+
+-- ================================================
+-- TABLA DE SOLICITUDES DE PROYECTOS (NUEVA)
+-- ================================================
+
+-- Tabla para las solicitudes de proyectos de clientes
+CREATE TABLE solicitudes_proyectos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  titulo TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  tipo_proyecto TEXT,
+  materiales_preferidos TEXT[],
+  medidas TEXT,
+  presupuesto_estimado DECIMAL,
+  presupuesto DECIMAL,
+  fecha_solicitud TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  fecha_deseada TIMESTAMP WITH TIME ZONE,
+  fecha_entrega TIMESTAMP WITH TIME ZONE,
+  referencias TEXT,
+  estado TEXT NOT NULL DEFAULT 'pendiente',
+  prioridad TEXT DEFAULT 'normal',
+  notas_adicionales TEXT,
+  fecha_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para solicitudes_proyectos
+CREATE INDEX idx_solicitudes_usuario ON solicitudes_proyectos(usuario_id);
+CREATE INDEX idx_solicitudes_estado ON solicitudes_proyectos(estado);
+CREATE INDEX idx_solicitudes_fecha ON solicitudes_proyectos(fecha_solicitud);
+
+-- ================================================
+-- TABLA DE COMENTARIOS DE PROYECTOS (NUEVA)
+-- ================================================
+
+-- Tabla para los comentarios en las solicitudes de proyectos
+CREATE TABLE comentarios_proyecto (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  proyecto_id UUID NOT NULL REFERENCES solicitudes_proyectos(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  mensaje TEXT NOT NULL,
+  fecha TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para comentarios_proyecto
+CREATE INDEX idx_comentarios_proyecto ON comentarios_proyecto(proyecto_id);
+CREATE INDEX idx_comentarios_usuario ON comentarios_proyecto(usuario_id);
+
+-- ================================================
+-- MODIFICAR NOTIFICACIONES PARA PROYECTOS
+-- ================================================
+
+-- Añadir campo proyecto_id a notificaciones
+ALTER TABLE notificaciones ADD COLUMN proyecto_id UUID REFERENCES solicitudes_proyectos(id) ON DELETE CASCADE;
+CREATE INDEX idx_notificaciones_proyecto ON notificaciones(proyecto_id);
+
+-- ================================================
+-- MODIFICAR TABLA USUARIOS
+-- ================================================
+
+-- Cambiar apellido a apellidos para mantener consistencia con el código
+ALTER TABLE usuarios RENAME COLUMN apellido TO apellidos;
+
+-- Añadir campos que necesita la aplicación
+ALTER TABLE usuarios ADD COLUMN telefono TEXT;
+ALTER TABLE usuarios ADD COLUMN direccion TEXT;
+
+-- ================================================
+-- POLÍTICAS PARA NUEVAS TABLAS
+-- ================================================
+
+-- Activar RLS para las nuevas tablas
+ALTER TABLE solicitudes_proyectos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comentarios_proyecto ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para solicitudes_proyectos
+CREATE POLICY "Usuarios pueden ver sus propias solicitudes" 
+  ON solicitudes_proyectos FOR SELECT
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden ver todas las solicitudes" 
+  ON solicitudes_proyectos FOR SELECT
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
+
+CREATE POLICY "Usuarios pueden crear sus propias solicitudes" 
+  ON solicitudes_proyectos FOR INSERT
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden actualizar sus propias solicitudes" 
+  ON solicitudes_proyectos FOR UPDATE
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden actualizar cualquier solicitud" 
+  ON solicitudes_proyectos FOR UPDATE
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
+
+-- Políticas para comentarios_proyecto
+CREATE POLICY "Todos pueden ver comentarios de proyectos" 
+  ON comentarios_proyecto FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM solicitudes_proyectos
+    WHERE solicitudes_proyectos.id = proyecto_id
+    AND (
+      solicitudes_proyectos.usuario_id = auth.uid() OR
+      (SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin'
+    )
+  ));
+
+CREATE POLICY "Usuarios pueden crear comentarios" 
+  ON comentarios_proyecto FOR INSERT
+  WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden actualizar sus propios comentarios" 
+  ON comentarios_proyecto FOR UPDATE
+  USING (usuario_id = auth.uid());
+
+CREATE POLICY "Administradores pueden actualizar cualquier comentario" 
+  ON comentarios_proyecto FOR UPDATE
+  USING ((SELECT rol FROM usuarios WHERE id = auth.uid()) = 'admin');
